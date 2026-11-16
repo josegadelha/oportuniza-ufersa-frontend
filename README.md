@@ -1,32 +1,31 @@
-# React + TypeScript + Vite
+# Oportuniza UFERSA
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend for the UFERSA academic opportunities platform, built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Copy `.env.example` to `.env`, then install dependencies and start the development server:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The default configuration enables mock services:
+
+```env
+VITE_USE_MOCKS=true
+VITE_API_URL=http://localhost:8080/api/v1
+```
+
+Mock login identifies the profile from the username: use `aluno.ufersa` or `discente` for a student, and `prof.ufersa` or `docente` for a professor. Any non-empty password is accepted. Mock sessions, profiles, notifications, opportunities, and candidacies are persisted in the browser's local storage.
+
+To use the backend, set `VITE_USE_MOCKS=false` and make the API available at `VITE_API_URL`.
+The current backend does not expose a public profile lookup by ID, so `/perfil/:id` can display other users only when mock services are enabled.
+
+## Validation
+
+```sh
+npm run build
+npm run lint
+```
