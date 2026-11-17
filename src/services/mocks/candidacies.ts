@@ -1,0 +1,96 @@
+import type { CandidacyResponse } from '../../types/domain'
+import { MOCK_USER_IDS } from './users'
+
+export const initialMockCandidacies: CandidacyResponse[] = [
+  {
+    id: 1,
+    studentId: MOCK_USER_IDS.student,
+    opportunityId: 1,
+    appliedAt: '2026-11-15T08:30:00',
+    status: 'IN_SELECTION',
+  },
+  {
+    id: 2,
+    studentId: MOCK_USER_IDS.studentAccessibility,
+    opportunityId: 1,
+    appliedAt: '2026-11-14T10:00:00',
+    status: 'HISTORY_REVIEW',
+  },
+  {
+    id: 3,
+    studentId: MOCK_USER_IDS.studentRobotics,
+    opportunityId: 1,
+    appliedAt: '2026-11-13T09:15:00',
+    status: 'INTERVIEW',
+  },
+  {
+    id: 4,
+    studentId: MOCK_USER_IDS.studentAgriTech,
+    opportunityId: 2,
+    appliedAt: '2026-11-12T11:20:00',
+    status: 'FINAL_REVIEW',
+  },
+  {
+    id: 5,
+    studentId: MOCK_USER_IDS.studentInnovation,
+    opportunityId: 2,
+    appliedAt: '2026-11-11T14:10:00',
+    status: 'APPROVED',
+  },
+  {
+    id: 6,
+    studentId: MOCK_USER_IDS.student,
+    opportunityId: 3,
+    appliedAt: '2026-11-14T13:45:00',
+    status: 'HISTORY_REVIEW',
+  },
+  {
+    id: 7,
+    studentId: MOCK_USER_IDS.studentAccessibility,
+    opportunityId: 3,
+    appliedAt: '2026-11-12T15:00:00',
+    status: 'REJECTED',
+  },
+  {
+    id: 8,
+    studentId: MOCK_USER_IDS.studentAgriTech,
+    opportunityId: 3,
+    appliedAt: '2026-11-13T16:30:00',
+    status: 'INTERVIEW',
+  },
+  {
+    id: 9,
+    studentId: MOCK_USER_IDS.studentInnovation,
+    opportunityId: 4,
+    appliedAt: '2026-11-14T08:00:00',
+    status: 'IN_SELECTION',
+  },
+  {
+    id: 10,
+    studentId: MOCK_USER_IDS.studentRobotics,
+    opportunityId: 4,
+    appliedAt: '2026-11-12T17:10:00',
+    status: 'APPROVED',
+  },
+  {
+    id: 11,
+    studentId: MOCK_USER_IDS.student,
+    opportunityId: 5,
+    appliedAt: '2026-11-13T10:20:00',
+    status: 'INTERVIEW',
+  },
+  {
+    id: 12,
+    studentId: MOCK_USER_IDS.student,
+    opportunityId: 6,
+    appliedAt: '2026-11-10T09:40:00',
+    status: 'APPROVED',
+  },
+  {
+    id: 13,
+    studentId: MOCK_USER_IDS.student,
+    opportunityId: 10,
+    appliedAt: '2026-11-02T13:00:00',
+    status: 'REJECTED',
+  },
+]
