@@ -1,0 +1,23 @@
+.link {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  color: var(--color-text-muted);
+  background: transparent;
+  text-decoration: none;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.link:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.active {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
