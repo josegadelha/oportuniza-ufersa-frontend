@@ -53,6 +53,7 @@
   --shadow-primary: 0 3px 10px rgba(53, 88, 168, 0.2);
   --shadow-focus: 0 0 0 3px rgba(53, 88, 168, 0.18);
   --radius-card: 12px;
+  --container-max: 1360px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
