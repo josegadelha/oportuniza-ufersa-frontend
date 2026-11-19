@@ -1,0 +1,50 @@
+import type { NotificationResponse } from '../../types/domain'
+import { MOCK_USER_IDS } from './users'
+
+export const initialMockNotifications: NotificationResponse[] = [
+  {
+    id: 1,
+    recipientId: MOCK_USER_IDS.student,
+    title: 'Candidatura em análise',
+    message: 'Sua candidatura para Inteligência artificial aplicada à triagem de imagens médicas foi recebida e está em análise.',
+    type: 'SELECTION_PROCESS_UPDATE',
+    isRead: false,
+    sentAt: '2026-11-15T08:45:00',
+  },
+  {
+    id: 2,
+    recipientId: MOCK_USER_IDS.student,
+    title: 'Orientação oferecida',
+    message: 'O professor Ricardo Silva aceitou orientar a proposta Mapa colaborativo de acessibilidade no campus.',
+    type: 'PITCH_INTEREST',
+    isRead: true,
+    sentAt: '2026-11-14T16:20:00',
+  },
+  {
+    id: 3,
+    recipientId: MOCK_USER_IDS.student,
+    title: 'Pedido de colaboração',
+    message: 'Ana Beatriz Oliveira solicitou participar da sua proposta Plataforma de apoio a projetos de pesquisa estudantis.',
+    type: 'PITCH_INTEREST',
+    isRead: false,
+    sentAt: '2026-11-13T11:10:00',
+  },
+  {
+    id: 4,
+    recipientId: MOCK_USER_IDS.professor,
+    title: 'Nova proposta para orientação',
+    message: 'Mariana Costa busca orientação para a proposta Mapa colaborativo de acessibilidade no campus.',
+    type: 'PITCH_INTEREST',
+    isRead: false,
+    sentAt: '2026-11-15T09:05:00',
+  },
+  {
+    id: 5,
+    recipientId: MOCK_USER_IDS.professor,
+    title: 'Atualização de processo seletivo',
+    message: 'Ana Beatriz Oliveira avançou para a etapa de entrevista na oportunidade de tecnologia assistiva.',
+    type: 'SELECTION_PROCESS_UPDATE',
+    isRead: true,
+    sentAt: '2026-11-12T14:00:00',
+  },
+]
