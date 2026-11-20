@@ -18,17 +18,17 @@ function toCard(proposal: ProjectProposalResponse): ProjectProposalCard {
 }
 
 export const projectProposalService: ProjectProposalService = {
-  async list() {
-    const { data } = await api.get<ProjectProposalResponse[]>('/project-proposals')
+  async list(signal?: AbortSignal) {
+    const { data } = await api.get<ProjectProposalResponse[]>('/project-proposals', { signal })
     return data.map(toCard)
   },
 
-  async listByStudent() {
-    const { data } = await api.get<ProjectProposalResponse[]>('/students/project-proposals')
+  async listByStudent(signal?: AbortSignal) {
+    const { data } = await api.get<ProjectProposalResponse[]>('/students/project-proposals', { signal })
     return data.map(toCard)
   },
 
-  async create(input: ProjectProposalCreateRequest) {
+  async create(input: ProjectProposalCreateRequest, signal?: AbortSignal) {
     const session = readAuthSession()
     if (!session || session.user.role !== 'STUDENT') {
       throw new Error('Entre como discente para publicar uma proposta.')
@@ -38,6 +38,7 @@ export const projectProposalService: ProjectProposalService = {
     const { data } = await api.post<ProjectProposalResponse>(
       '/students/project-proposals',
       request,
+      { signal },
     )
     return {
       ...toCard(data),
@@ -46,10 +47,11 @@ export const projectProposalService: ProjectProposalService = {
     }
   },
 
-  async patch(proposalId: number, input: ProjectProposalPatchRequest) {
+  async patch(proposalId: number, input: ProjectProposalPatchRequest, signal?: AbortSignal) {
     const { data } = await api.patch<ProjectProposalResponse>(
       `/project-proposals/${proposalId}`,
       input,
+      { signal },
     )
     return toCard(data)
   },

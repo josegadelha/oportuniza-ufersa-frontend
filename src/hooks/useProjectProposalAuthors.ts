@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { getServiceErrorMessage } from '../services/errorMessage'
 import { userService } from '../services/userService'
@@ -9,6 +10,10 @@ interface AuthorState {
   error: string | null
 }
 
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
+
 export function useProjectProposalAuthors(authorIds: number[], currentUser: UserProfile) {
   const authorIdKey = [...new Set(authorIds)].join(',')
   const requestKey = `${currentUser.role}:${currentUser.profile.id}:${currentUser.profile.name}:${authorIdKey}`
@@ -18,7 +23,7 @@ export function useProjectProposalAuthors(authorIds: number[], currentUser: User
   useEffect(() => {
     if (!authorIdKey) return
 
-    let isCurrent = true
+    const controller = new AbortController()
     const uniqueAuthorIds = authorIdKey.split(',').map(Number)
 
     const loadAuthors = async () => {
@@ -26,20 +31,19 @@ export function useProjectProposalAuthors(authorIds: number[], currentUser: User
         try {
           const profile = currentUser.role === 'STUDENT' && currentUser.profile.id === authorId
             ? currentUser
-            : await userService.getProfileById(authorId)
+            : await userService.getProfileById(authorId, controller.signal)
           if (profile.role !== 'STUDENT') {
             throw new Error(`O perfil ${authorId} associado à proposta não é de um discente.`)
           }
           return { authorId, profile: profile.profile } as const
         } catch (error: unknown) {
+          if (isAbortError(error)) return { authorId, aborted: true } as const
           return {
             authorId,
             error: getServiceErrorMessage(error, 'Não foi possível carregar o perfil do autor.'),
           } as const
         }
       }))
-
-      if (!isCurrent) return
 
       const profiles: Record<number, StudentResponse> = {}
       for (const result of results) {
@@ -49,13 +53,15 @@ export function useProjectProposalAuthors(authorIds: number[], currentUser: User
       const firstError = results.find(
         (result): result is { authorId: number; error: string } => 'error' in result,
       )
-      setState({ key: requestKey, profiles, error: firstError?.error ?? null })
+      if (!firstError?.error) {
+        setState({ key: requestKey, profiles, error: firstError?.error ?? null })
+      }
     }
 
     void loadAuthors()
 
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [authorIdKey, currentUser, requestKey])
 

@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { getServiceErrorMessage } from '../services/errorMessage'
 import { projectProposalService } from '../services/projectProposalService'
@@ -7,6 +8,10 @@ import type {
   ProjectProposalPatchRequest,
 } from '../types/domain'
 import type { ServiceResult } from '../services/result'
+
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
 
 export function useProjectProposals() {
   const [proposals, setProposals] = useState<ProjectProposalCard[]>([])
@@ -19,29 +24,31 @@ export function useProjectProposals() {
     try {
       setProposals(await projectProposalService.list())
     } catch (loadError: unknown) {
-      setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as propostas de alunos.'))
+      if (!isAbortError(loadError)) {
+        setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as propostas de alunos.'))
+      }
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    let isCurrent = true
-    projectProposalService.list()
+    const controller = new AbortController()
+    projectProposalService.list(controller.signal)
       .then((items) => {
-        if (isCurrent) setProposals(items)
+        setProposals(items)
       })
       .catch((loadError: unknown) => {
-        if (isCurrent) {
+        if (!isAbortError(loadError)) {
           setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as propostas de alunos.'))
         }
       })
       .finally(() => {
-        if (isCurrent) setIsLoading(false)
+        setIsLoading(false)
       })
 
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [])
 
