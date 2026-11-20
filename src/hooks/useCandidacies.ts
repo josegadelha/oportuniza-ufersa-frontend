@@ -1,8 +1,13 @@
+import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { candidacyService } from '../services/candidacyService'
 import type { CandidacyResponse } from '../types/domain'
 import type { ServiceResult } from '../services/result'
 import { getServiceErrorMessage } from '../services/errorMessage'
+
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
 
 export function useCandidacies(studentId: number | null) {
   const [candidacies, setCandidacies] = useState<CandidacyResponse[]>([])
@@ -21,7 +26,9 @@ export function useCandidacies(studentId: number | null) {
     try {
       setCandidacies(await candidacyService.listByStudent())
     } catch (loadError) {
-      setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as candidaturas.'))
+      if (!isAbortError(loadError)) {
+        setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as candidaturas.'))
+      }
     } finally {
       setIsLoading(false)
     }
@@ -30,20 +37,22 @@ export function useCandidacies(studentId: number | null) {
   useEffect(() => {
     if (studentId === null) return
 
-    let isCurrent = true
-    candidacyService.listByStudent()
+    const controller = new AbortController()
+    candidacyService.listByStudent(controller.signal)
       .then((items) => {
-        if (isCurrent) setCandidacies(items)
+        setCandidacies(items)
       })
       .catch((loadError: unknown) => {
-        if (isCurrent) setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as candidaturas.'))
+        if (!isAbortError(loadError)) {
+          setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as candidaturas.'))
+        }
       })
       .finally(() => {
-        if (isCurrent) setIsLoading(false)
+        setIsLoading(false)
       })
 
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [studentId])
 

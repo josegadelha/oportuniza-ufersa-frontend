@@ -8,14 +8,14 @@ import type {
 } from '../types/domain'
 
 export interface CandidacyService {
-  list(): Promise<CandidacyResponse[]>
-  listByStudent(): Promise<CandidacyResponse[]>
-  listByOpportunity(opportunityId: number): Promise<CandidacyResponse[]>
-  getById(candidacyId: number): Promise<CandidacyResponse>
-  create(input: CandidacyCreateRequest): Promise<CandidacyResponse>
-  update(candidacyId: number, input: CandidacyUpdateRequest): Promise<CandidacyResponse>
-  patch(candidacyId: number, input: CandidacyPatchRequest): Promise<CandidacyResponse>
-  remove(candidacyId: number): Promise<void>
+  list(signal?: AbortSignal): Promise<CandidacyResponse[]>
+  listByStudent(signal?: AbortSignal): Promise<CandidacyResponse[]>
+  listByOpportunity(opportunityId: number, signal?: AbortSignal): Promise<CandidacyResponse[]>
+  getById(candidacyId: number, signal?: AbortSignal): Promise<CandidacyResponse>
+  create(input: CandidacyCreateRequest, signal?: AbortSignal): Promise<CandidacyResponse>
+  update(candidacyId: number, input: CandidacyUpdateRequest, signal?: AbortSignal): Promise<CandidacyResponse>
+  patch(candidacyId: number, input: CandidacyPatchRequest, signal?: AbortSignal): Promise<CandidacyResponse>
+  remove(candidacyId: number, signal?: AbortSignal): Promise<void>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'

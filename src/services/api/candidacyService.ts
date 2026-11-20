@@ -8,45 +8,46 @@ import type {
 import type { CandidacyService } from '../candidacyService'
 
 export const candidacyService: CandidacyService = {
-  async list() {
-    const { data } = await api.get<CandidacyResponse[]>('/candidacies')
+  async list(signal?: AbortSignal) {
+    const { data } = await api.get<CandidacyResponse[]>('/candidacies', { signal })
     return data
   },
 
-  async listByStudent() {
-    const { data } = await api.get<CandidacyResponse[]>('/students/candidacies')
+  async listByStudent(signal?: AbortSignal) {
+    const { data } = await api.get<CandidacyResponse[]>('/students/candidacies', { signal })
     return data
   },
 
-  async listByOpportunity(opportunityId: number) {
-    const { data } = await api.get<CandidacyResponse[]>(`/opportunities/${opportunityId}/candidacies`)
+  async listByOpportunity(opportunityId: number, signal?: AbortSignal) {
+    const { data } = await api.get<CandidacyResponse[]>(`/opportunities/${opportunityId}/candidacies`, { signal })
     return data
   },
 
-  async getById(candidacyId: number) {
-    const { data } = await api.get<CandidacyResponse>(`/candidacies/${candidacyId}`)
+  async getById(candidacyId: number, signal?: AbortSignal) {
+    const { data } = await api.get<CandidacyResponse>(`/candidacies/${candidacyId}`, { signal })
     return data
   },
 
-  async create(input: CandidacyCreateRequest) {
+  async create(input: CandidacyCreateRequest, signal?: AbortSignal) {
     const { data } = await api.post<CandidacyResponse>(
       `/opportunities/${input.opportunityId}/candidacies`,
       input,
+      { signal },
     )
     return data
   },
 
-  async update(candidacyId: number, input: CandidacyUpdateRequest) {
-    const { data } = await api.put<CandidacyResponse>(`/candidacies/${candidacyId}`, input)
+  async update(candidacyId: number, input: CandidacyUpdateRequest, signal?: AbortSignal) {
+    const { data } = await api.put<CandidacyResponse>(`/candidacies/${candidacyId}`, input, { signal })
     return data
   },
 
-  async patch(candidacyId: number, input: CandidacyPatchRequest) {
-    const { data } = await api.patch<CandidacyResponse>(`/candidacies/${candidacyId}`, input)
+  async patch(candidacyId: number, input: CandidacyPatchRequest, signal?: AbortSignal) {
+    const { data } = await api.patch<CandidacyResponse>(`/candidacies/${candidacyId}`, input, { signal })
     return data
   },
 
-  async remove(candidacyId: number) {
-    await api.delete(`/candidacies/${candidacyId}`)
+  async remove(candidacyId: number, signal?: AbortSignal) {
+    await api.delete(`/candidacies/${candidacyId}`, { signal })
   },
 }
