@@ -3,10 +3,10 @@ import { mockProposalInterestService } from './mocks/mockProposalInterestService
 import type { ProposalInterestResponse, ProposalInterestStatus } from '../types/domain'
 
 export interface ProposalInterestService {
-  list(): Promise<ProposalInterestResponse[]>
-  listByProposal(projectProposalId: number): Promise<ProposalInterestResponse[]>
-  createForProposal(projectProposalId: number): Promise<ProposalInterestResponse>
-  updateStatus(interestId: number, status: ProposalInterestStatus): Promise<ProposalInterestResponse>
+  list(signal?: AbortSignal): Promise<ProposalInterestResponse[]>
+  listByProposal(projectProposalId: number, signal?: AbortSignal): Promise<ProposalInterestResponse[]>
+  createForProposal(projectProposalId: number, signal?: AbortSignal): Promise<ProposalInterestResponse>
+  updateStatus(interestId: number, status: ProposalInterestStatus, signal?: AbortSignal): Promise<ProposalInterestResponse>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
