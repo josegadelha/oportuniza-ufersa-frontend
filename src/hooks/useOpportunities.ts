@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { opportunityService } from '../services/opportunityService'
 import type {
@@ -8,6 +9,10 @@ import type {
 } from '../types/domain'
 import type { ServiceResult } from '../services/result'
 import { getServiceErrorMessage } from '../services/errorMessage'
+
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
 
 export function useOpportunities(forCurrentProfessor = false) {
   const [opportunities, setOpportunities] = useState<OpportunityResponse[]>([])
@@ -24,30 +29,34 @@ export function useOpportunities(forCurrentProfessor = false) {
           : opportunityService.list()
       ))
     } catch (loadError) {
-      setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as oportunidades.'))
+      if (!isAbortError(loadError)) {
+        setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as oportunidades.'))
+      }
     } finally {
       setIsLoading(false)
     }
   }, [forCurrentProfessor])
 
   useEffect(() => {
-    let isCurrent = true
+    const controller = new AbortController()
     const request = forCurrentProfessor
-      ? opportunityService.listByProfessor()
-      : opportunityService.list()
+      ? opportunityService.listByProfessor(controller.signal)
+      : opportunityService.list(controller.signal)
     request
       .then((items) => {
-        if (isCurrent) setOpportunities(items)
+        setOpportunities(items)
       })
       .catch((loadError: unknown) => {
-        if (isCurrent) setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as oportunidades.'))
+        if (!isAbortError(loadError)) {
+          setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as oportunidades.'))
+        }
       })
       .finally(() => {
-        if (isCurrent) setIsLoading(false)
+        setIsLoading(false)
       })
 
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [forCurrentProfessor])
 

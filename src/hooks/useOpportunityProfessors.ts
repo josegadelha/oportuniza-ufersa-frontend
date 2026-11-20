@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { getServiceErrorMessage } from '../services/errorMessage'
 import { userService } from '../services/userService'
@@ -10,6 +11,10 @@ interface ProfessorState {
   error: string | null
 }
 
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
+
 export function useOpportunityProfessors(professorIds: number[], currentUser: UserProfile) {
   const professorIdKey = [...new Set(professorIds)].join(',')
   const requestKey = `${currentUser.role}:${currentUser.profile.id}:${currentUser.profile.name}:${professorIdKey}`
@@ -19,7 +24,7 @@ export function useOpportunityProfessors(professorIds: number[], currentUser: Us
   useEffect(() => {
     if (!professorIdKey) return
 
-    let isCurrent = true
+    const controller = new AbortController()
     const uniqueProfessorIds = professorIdKey.split(',').map(Number)
 
     const loadProfessors = async () => {
@@ -27,20 +32,19 @@ export function useOpportunityProfessors(professorIds: number[], currentUser: Us
         try {
           const profile = currentUser.role === 'PROFESSOR' && currentUser.profile.id === professorId
             ? currentUser
-            : await userService.getProfileById(professorId)
+            : await userService.getProfileById(professorId, controller.signal)
           if (profile.role !== 'PROFESSOR') {
             throw new Error(`O perfil ${professorId} associado à oportunidade não é de um docente.`)
           }
           return { professorId, profile: profile.profile } as const
         } catch (error: unknown) {
+          if (isAbortError(error)) return { professorId, aborted: true } as const
           return {
             professorId,
             error: getServiceErrorMessage(error, 'Não foi possível carregar o perfil do docente.'),
           } as const
         }
       }))
-
-      if (!isCurrent) return
 
       const profiles: Record<number, ProfessorResponse> = {}
       for (const result of results) {
@@ -50,18 +54,20 @@ export function useOpportunityProfessors(professorIds: number[], currentUser: Us
       const firstError = results.find(
         (result): result is { professorId: number; error: string } => 'error' in result,
       )
-      setState({
-        key: requestKey,
-        profiles,
-        isLoading: false,
-        error: firstError?.error ?? null,
-      })
+      if (!firstError?.error) {
+        setState({
+          key: requestKey,
+          profiles,
+          isLoading: false,
+          error: firstError?.error ?? null,
+        })
+      }
     }
 
     void loadProfessors()
 
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [currentUser, professorIdKey, requestKey])
 

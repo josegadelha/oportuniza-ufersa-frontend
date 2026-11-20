@@ -8,37 +8,37 @@ import type {
 import type { OpportunityService } from '../opportunityService'
 
 export const opportunityService: OpportunityService = {
-  async list() {
-    const { data } = await api.get<OpportunityResponse[]>('/opportunities')
+  async list(signal?: AbortSignal) {
+    const { data } = await api.get<OpportunityResponse[]>('/opportunities', { signal })
     return data
   },
 
-  async listByProfessor() {
-    const { data } = await api.get<OpportunityResponse[]>('/professors/opportunities')
+  async listByProfessor(signal?: AbortSignal) {
+    const { data } = await api.get<OpportunityResponse[]>('/professors/opportunities', { signal })
     return data
   },
 
-  async getById(opportunityId) {
-    const { data } = await api.get<OpportunityResponse>(`/opportunities/${opportunityId}`)
+  async getById(opportunityId, signal?: AbortSignal) {
+    const { data } = await api.get<OpportunityResponse>(`/opportunities/${opportunityId}`, { signal })
     return data
   },
 
-  async create(input: OpportunityCreateRequest) {
-    const { data } = await api.post<OpportunityResponse>('/professors/opportunities', input)
+  async create(input: OpportunityCreateRequest, signal?: AbortSignal) {
+    const { data } = await api.post<OpportunityResponse>('/professors/opportunities', input, { signal })
     return data
   },
 
-  async update(opportunityId: number, input: OpportunityUpdateRequest) {
-    const { data } = await api.put<OpportunityResponse>(`/opportunities/${opportunityId}`, input)
+  async update(opportunityId: number, input: OpportunityUpdateRequest, signal?: AbortSignal) {
+    const { data } = await api.put<OpportunityResponse>(`/opportunities/${opportunityId}`, input, { signal })
     return data
   },
 
-  async patch(opportunityId: number, input: OpportunityPatchRequest) {
-    const { data } = await api.patch<OpportunityResponse>(`/opportunities/${opportunityId}`, input)
+  async patch(opportunityId: number, input: OpportunityPatchRequest, signal?: AbortSignal) {
+    const { data } = await api.patch<OpportunityResponse>(`/opportunities/${opportunityId}`, input, { signal })
     return data
   },
 
-  async remove(opportunityId: number) {
-    await api.delete(`/opportunities/${opportunityId}`)
+  async remove(opportunityId: number, signal?: AbortSignal) {
+    await api.delete(`/opportunities/${opportunityId}`, { signal })
   },
 }
