@@ -16,18 +16,18 @@ import {
   X,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { departmentLabels, departments, courseLabels } from '../constants/domainLabels'
-import { useCandidacies } from '../hooks/useCandidacies'
-import { useNotificationActions } from '../hooks/useNotificationActions'
-import { useOpportunities } from '../hooks/useOpportunities'
-import { useOpportunityProfessors } from '../hooks/useOpportunityProfessors'
-import { useProposalInterests } from '../hooks/useProposalInterests'
-import { useProjectProposalAuthors } from '../hooks/useProjectProposalAuthors'
-import { useProjectProposals } from '../hooks/useProjectProposals'
-import { ProjectsAndProcessesLink } from './Header'
-import CustomSelect from './CustomSelect'
-import NotificationMenu from './NotificationMenu'
-import styles from './HomePage.module.css'
+import { departmentLabels, departments, courseLabels } from '../../constants/domainLabels'
+import { useCandidacies } from '../../hooks/useCandidacies'
+import { useNotificationActions } from '../../hooks/useNotificationActions'
+import { useOpportunities } from '../../hooks/useOpportunities'
+import { useOpportunityProfessors } from '../../hooks/useOpportunityProfessors'
+import { useProposalInterests } from '../../hooks/useProposalInterests'
+import { useProjectProposalAuthors } from '../../hooks/useProjectProposalAuthors'
+import { useProjectProposals } from '../../hooks/useProjectProposals'
+import { ProjectsAndProcessesLink } from '../../UI/Header'
+import CustomSelect from '../../UI/CustomSelect'
+import NotificationMenu from '../../UI/NotificationMenu'
+import styles from './Home.module.css'
 import type {
   OpportunityResponse,
   OpportunityType,
@@ -37,8 +37,8 @@ import type {
   ProjectProposalStatus,
   Department,
   UserProfile,
-} from '../types/domain'
-import type { ServiceResult } from '../services/result'
+} from '../../types/domain'
+import type { ServiceResult } from '../../services/result'
 
 interface HomePageProps {
   user: UserProfile
@@ -974,11 +974,11 @@ function HomePage({ user, onLogout }: HomePageProps) {
                 {activeFilterChips.length > 0 && (
                   <div aria-label="Filtros ativos" className={styles['active-filter-list']} role="group">
                     <div className={styles['active-filter-chips']}>
-                      {activeFilterChips.map((filter, index) => (
+                      {activeFilterChips.map((filter) => (
                         <button
                           aria-label={`Remover filtro ${filter.label}`}
                           className={styles['active-filter']}
-                          key={`${filter.label}-${index}`}
+                          key={filter.label}
                           onClick={filter.clear}
                           type="button"
                         >
@@ -1067,11 +1067,11 @@ function HomePage({ user, onLogout }: HomePageProps) {
               {activeFilterChips.length > 0 && (
                 <div aria-label="Filtros ativos" className={styles['active-filter-list']} role="group">
                   <div className={styles['active-filter-chips']}>
-                    {activeFilterChips.map((filter, index) => (
+                    {activeFilterChips.map((filter) => (
                       <button
                         aria-label={`Remover filtro ${filter.label}`}
                         className={styles['active-filter']}
-                        key={`${filter.label}-${index}`}
+                        key={filter.label}
                         onClick={filter.clear}
                         type="button"
                       >
