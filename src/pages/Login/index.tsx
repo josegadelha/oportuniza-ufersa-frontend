@@ -6,8 +6,8 @@ import {
   LockKeyhole,
   UserRound,
 } from 'lucide-react'
-import type { LoginCredentials } from '../types/domain'
-import styles from './LoginPage.module.css'
+import type { LoginCredentials } from '../../types/domain'
+import styles from './Login.module.css'
 
 interface LoginPageProps {
   onLogin: (credentials: LoginCredentials) => Promise<boolean>
