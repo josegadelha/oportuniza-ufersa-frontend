@@ -11,10 +11,10 @@ import type {
 
 export interface UserService {
   supportsExtendedProfileFields: boolean
-  getCurrentProfile(role: UserRole): Promise<UserProfileDetails>
-  getProfileById(profileId: number): Promise<UserProfileDetails>
-  patchStudent(input: StudentProfileUpdate): Promise<StudentProfileDetails>
-  patchProfessor(input: ProfessorProfileUpdate): Promise<ProfessorProfileDetails>
+  getCurrentProfile(role: UserRole, signal?: AbortSignal): Promise<UserProfileDetails>
+  getProfileById(profileId: number, signal?: AbortSignal): Promise<UserProfileDetails>
+  patchStudent(input: StudentProfileUpdate, signal?: AbortSignal): Promise<StudentProfileDetails>
+  patchProfessor(input: ProfessorProfileUpdate, signal?: AbortSignal): Promise<ProfessorProfileDetails>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'

@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { getServiceErrorMessage } from '../services/errorMessage'
 import { userService } from '../services/userService'
@@ -20,6 +21,10 @@ interface ProfileLoadState {
   error: string | null
 }
 
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
+
 export function useProfile(profileId?: string) {
   const { user, updateUser } = useAuth()
   const [profileState, setProfileState] = useState<ProfileLoadState | null>(null)
@@ -31,11 +36,11 @@ export function useProfile(profileId?: string) {
   const isLoading = Boolean(user) && (!currentState || currentState.isLoading)
   const error = currentState?.error ?? null
 
-  const fetchProfile = useCallback(async (): Promise<UserProfileDetails | null> => {
+  const fetchProfile = useCallback(async (signal?: AbortSignal): Promise<UserProfileDetails | null> => {
     if (!user) return null
 
     if (isOwnProfile) {
-      const currentProfile = await userService.getCurrentProfile(user.role)
+      const currentProfile = await userService.getCurrentProfile(user.role, signal)
       if (currentProfile.role !== user.role || currentProfile.profile.id !== user.profile.id) {
         throw new Error('O perfil carregado não corresponde à sessão atual.')
       }
@@ -46,26 +51,24 @@ export function useProfile(profileId?: string) {
     if (!Number.isSafeInteger(requestedProfileId) || requestedProfileId < 1) {
       throw new Error('O identificador do perfil é inválido.')
     }
-    return userService.getProfileById(requestedProfileId)
+    return userService.getProfileById(requestedProfileId, signal)
   }, [isOwnProfile, profileId, user])
 
   useEffect(() => {
     if (!user) return
 
-    let isCurrent = true
-    fetchProfile()
+    const controller = new AbortController()
+    fetchProfile(controller.signal)
       .then((loadedProfile) => {
-        if (isCurrent) {
-          setProfileState({
-            key: requestKey,
-            profile: loadedProfile,
-            isLoading: false,
-            error: null,
-          })
-        }
+        setProfileState({
+          key: requestKey,
+          profile: loadedProfile,
+          isLoading: false,
+          error: null,
+        })
       })
       .catch((loadError: unknown) => {
-        if (isCurrent) {
+        if (!isAbortError(loadError)) {
           setProfileState({
             key: requestKey,
             profile: null,
@@ -76,7 +79,7 @@ export function useProfile(profileId?: string) {
       })
 
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [fetchProfile, requestKey, user])
 
@@ -95,12 +98,14 @@ export function useProfile(profileId?: string) {
         error: null,
       })
     } catch (loadError) {
-      setProfileState({
-        key: requestKey,
-        profile,
-        isLoading: false,
-        error: getServiceErrorMessage(loadError, 'Não foi possível carregar o perfil.'),
-      })
+      if (!isAbortError(loadError)) {
+        setProfileState({
+          key: requestKey,
+          profile,
+          isLoading: false,
+          error: getServiceErrorMessage(loadError, 'Não foi possível carregar o perfil.'),
+        })
+      }
     }
   }, [fetchProfile, profile, requestKey])
 
@@ -146,12 +151,14 @@ export function useProfile(profileId?: string) {
       }
       return true
     } catch (saveError) {
-      setProfileState((current) => ({
-        key: requestKey,
-        profile: current?.key === requestKey ? current.profile : profile,
-        isLoading: false,
-        error: getServiceErrorMessage(saveError, 'Não foi possível salvar as alterações do perfil.'),
-      }))
+      if (!isAbortError(saveError)) {
+        setProfileState((current) => ({
+          key: requestKey,
+          profile: current?.key === requestKey ? current.profile : profile,
+          isLoading: false,
+          error: getServiceErrorMessage(saveError, 'Não foi possível salvar as alterações do perfil.'),
+        }))
+      }
       return false
     } finally {
       setIsSaving(false)

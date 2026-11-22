@@ -12,22 +12,22 @@ import {
   Save,
 } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { courseLabels, departmentLabels } from '../constants/domainLabels'
-import { useAuth } from '../hooks/useAuth'
-import { useCandidacies } from '../hooks/useCandidacies'
-import { useOpportunities } from '../hooks/useOpportunities'
-import { useProjectProposals } from '../hooks/useProjectProposals'
-import { useProfile, type ProfileUpdate } from '../hooks/useProfile'
-import { ProjectsAndProcessesLink } from './Header'
-import NotificationMenu from './NotificationMenu'
+import { courseLabels, departmentLabels } from '../../constants/domainLabels'
+import { useAuth } from '../../hooks/useAuth'
+import { useCandidacies } from '../../hooks/useCandidacies'
+import { useOpportunities } from '../../hooks/useOpportunities'
+import { useProjectProposals } from '../../hooks/useProjectProposals'
+import { useProfile, type ProfileUpdate } from '../../hooks/useProfile'
+import { ProjectsAndProcessesLink } from '../../UI/Header'
+import NotificationMenu from '../../UI/NotificationMenu'
 import type {
   CandidacyStatus,
   OpportunityStatus,
   OpportunityType,
   ProjectProposalStatus,
   UserProfileDetails,
-} from '../types/domain'
-import styles from './ProfilePage.module.css'
+} from '../../types/domain'
+import styles from './Profile.module.css'
 
 interface ProfileFormState {
   lattesUrl: string
