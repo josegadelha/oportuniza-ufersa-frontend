@@ -7,6 +7,7 @@ export interface SubmissionService {
   listByDeliverable(deliverableId: number, signal?: AbortSignal): Promise<SubmissionResponse[]>
   versions(submissionId: number, signal?: AbortSignal): Promise<SubmissionVersionResponse[]>
   submit(deliverableId: number, filePath: string, signal?: AbortSignal): Promise<SubmissionResponse>
+  review(submissionId: number, status: 'APPROVED' | 'REJECTED', feedback?: string, signal?: AbortSignal): Promise<SubmissionResponse>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'

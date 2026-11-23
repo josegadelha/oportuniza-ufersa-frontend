@@ -164,6 +164,7 @@ export function useMyProjects() {
         ...candidacies.map((candidacy) => candidacy.studentId),
         ...proposalInterests.map((interest) => interest.userId),
         ...projects.flatMap((project) => [...project.advisorIds, ...project.memberIds]),
+        ...submissions.map((submission) => submission.studentId),
       ]
       const people = await loadPeople(personIds, user)
 
@@ -499,6 +500,30 @@ export function useMyProjects() {
     }
   }, [data.deliverables, data.projects, sendNotification, user])
 
+  const reviewSubmission = useCallback(async (
+    submissionId: number,
+    status: 'APPROVED' | 'REJECTED',
+    feedback?: string,
+  ): Promise<ServiceResult<SubmissionResponse>> => {
+    if (!user || user.role !== 'PROFESSOR') {
+      return { success: false, message: 'Somente docentes podem avaliar submissões.' }
+    }
+
+    try {
+      const updated = await submissionService.review(submissionId, status, feedback)
+      setData((current) => ({
+        ...current,
+        submissions: current.submissions.map((item) => item.id === submissionId ? updated : item),
+      }))
+      return { success: true, data: updated }
+    } catch (actionError: unknown) {
+      return {
+        success: false,
+        message: getServiceErrorMessage(actionError, 'Não foi possível avaliar a submissão.'),
+      }
+    }
+  }, [user])
+
   return {
     user,
     data,
@@ -515,5 +540,6 @@ export function useMyProjects() {
     createOpportunity,
     createDeliverable,
     submitDeliverable,
+    reviewSubmission,
   }
 }

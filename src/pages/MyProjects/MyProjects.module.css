@@ -153,7 +153,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 25px;
+  margin-bottom: 18px;
 }
 
 .summaryCard {
@@ -169,17 +169,20 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
 .summaryCard:hover {
-  border-color: var(--color-primary-border);
+  border-color: #3558a8;
+  background: rgba(53, 88, 168, 0.035);
+  box-shadow: 0 5px 16px rgba(53, 88, 168, 0.08);
 }
 
 .summaryCardActive,
 .summaryCardActive:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  border-color: #3558a8;
+  background: rgba(53, 88, 168, 0.1);
+  box-shadow: 0 0 0 3px rgba(53, 88, 168, 0.12), 0 7px 18px rgba(53, 88, 168, 0.08);
 }
 
 .summaryIcon,
@@ -227,47 +230,7 @@
   font-size: 18px;
 }
 
-.dashboardTabs {
-  display: flex;
-  gap: 32px;
-  margin-bottom: 18px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  border-bottom: 1px solid var(--color-border);
-  scrollbar-width: none;
-}
-
-.dashboardTabs::-webkit-scrollbar {
-  display: none;
-}
-
-.dashboardTab {
-  position: relative;
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 4px;
-  border: 0;
-  color: var(--color-text-muted);
-  background: transparent;
-  font: inherit;
-  font-size: 16px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.dashboardTab:hover,
-.dashboardTabActive {
-  color: var(--color-primary);
-}
-
-.dashboardTabActive {
-  box-shadow: inset 0 -2px 0 var(--color-primary);
-}
-
-.dashboardTabCount {
+.countBadge {
   display: inline-grid;
   min-width: 20px;
   height: 20px;
@@ -278,11 +241,6 @@
   background: var(--color-surface-muted);
   font-size: 14px;
   font-weight: 700;
-}
-
-.dashboardTabActive .dashboardTabCount {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
 }
 
 .section {
@@ -406,6 +364,49 @@
   padding-bottom: 0;
 }
 
+.deliverableBlock {
+  display: grid;
+  min-width: 0;
+}
+
+.submissionList {
+  display: grid;
+  gap: 6px;
+  margin-left: 44px;
+  padding: 8px 0 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.submissionRow {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 124px 124px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 7px 0;
+}
+
+.submissionStudent {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.submissionStudent strong {
+  overflow-wrap: anywhere;
+}
+
+.submissionStudent span {
+  color: var(--color-text-subtle);
+  line-height: 1.35;
+}
+
+.submissionRow > .uploadButton {
+  width: 124px;
+}
+
 .deliverableInfo {
   display: flex;
   flex: 1;
@@ -476,6 +477,19 @@
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
+  }
+
+  .submissionList {
+    margin-left: 0;
+  }
+
+  .submissionRow {
+    grid-template-columns: 1fr auto;
+  }
+
+  .submissionRow > .uploadButton {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .deliverableActions {
@@ -719,6 +733,11 @@
 .statusMuted {
   color: var(--color-text-subtle);
   background: var(--color-surface-muted);
+}
+
+.statusRejected {
+  color: #3558a8;
+  background: #edf2ff;
 }
 
 .proposalTags {

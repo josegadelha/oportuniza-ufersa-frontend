@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useMyProjects } from '../../hooks/useMyProjects'
 import { useNotificationActions } from '../../hooks/useNotificationActions'
 import NotificationMenu from '../../UI/NotificationMenu'
-import { ProjectsAndProcessesLink } from '../../UI/Header'
+import { ProfileLink, ProjectsAndProcessesLink } from '../../UI/Header'
 import styles from './MyProjects.module.css'
 import type {
   CandidacyResponse,
@@ -150,6 +150,7 @@ function MyProjectsPage() {
     submitDeliverable,
     editOpportunity,
     createOpportunity,
+    reviewSubmission,
   } = useMyProjects()
   const [isWorking, setIsWorking] = useState(false)
   const [actionNotice, setActionNotice] = useState<string | null>(null)
@@ -325,46 +326,90 @@ function MyProjectsPage() {
                       && (user?.role === 'PROFESSOR' || item.studentId === user?.profile.id)
                     ))
                     const status = submission?.status ?? 'WAITING'
+                    const professorSubmissions = user?.role === 'PROFESSOR'
+                      ? data.submissions.filter((item) => (
+                        item.deliverableId === deliverable.id && item.filePath !== null
+                      ))
+                      : []
                     return (
-                      <div className={styles.deliverableRow} key={deliverable.id}>
-                        <div className={styles.deliverableInfo}>
-                          <span className={styles.deliverableIcon}><FileText size={16} /></span>
-                          <div className={styles.deliverableDetails}>
-                            <strong>{deliverable.title}</strong>
-                            <span>
-                              Prazo: {new Intl.DateTimeFormat('pt-BR').format(
-                                new Date(`${deliverable.deadline.slice(0, 10)}T12:00:00`),
-                              )}
-                              {submission?.filePath ? ` · Arquivo: ${submission.filePath}` : ''}
-                            </span>
+                      <div className={styles.deliverableBlock} key={deliverable.id}>
+                        <div className={styles.deliverableRow}>
+                          <div className={styles.deliverableInfo}>
+                            <span className={styles.deliverableIcon}><FileText size={16} /></span>
+                            <div className={styles.deliverableDetails}>
+                              <strong>{deliverable.title}</strong>
+                              <span>
+                                Prazo: {new Intl.DateTimeFormat('pt-BR').format(
+                                  new Date(`${deliverable.deadline.slice(0, 10)}T12:00:00`),
+                                )}
+                                {user?.role === 'STUDENT' && submission?.filePath
+                                  ? ` · Arquivo: ${submission.filePath}`
+                                  : ''}
+                              </span>
+                            </div>
                           </div>
+                          {user?.role === 'STUDENT' && (
+                            <div className={styles.deliverableActions}>
+                              <span className={`${styles.statusBadge} ${
+                                status === 'APPROVED' ? styles.statusSuccess
+                                  : status === 'REJECTED' ? styles.statusRejected
+                                    : styles.statusPending
+                              }`}>
+                                {submissionStatusLabels[status]}
+                              </span>
+                              {status === 'APPROVED' ? (
+                                <button
+                                  className={`${styles.uploadButton} ${styles.viewButton}`}
+                                  onClick={() => setViewTarget({ deliverable, submission })}
+                                  type="button"
+                                >
+                                  <Eye size={14} /> Ver envio
+                                </button>
+                              ) : (
+                                <button
+                                  className={styles.uploadButton}
+                                  onClick={() => setUploadTarget(deliverable)}
+                                  type="button"
+                                >
+                                  <Upload size={14} /> {submission ? 'Reenviar' : 'Enviar'}
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <div className={styles.deliverableActions}>
-                          <span className={`${styles.statusBadge} ${
-                            status === 'APPROVED' ? styles.statusSuccess
-                              : status === 'REJECTED' ? styles.statusMuted
-                                : styles.statusPending
-                          }`}>
-                            {submissionStatusLabels[status]}
-                          </span>
-                          {status === 'APPROVED' ? (
-                            <button
-                              className={`${styles.uploadButton} ${styles.viewButton}`}
-                              onClick={() => setViewTarget({ deliverable, submission })}
-                              type="button"
-                            >
-                              <Eye size={14} /> Ver envio
-                            </button>
-                          ) : user?.role === 'STUDENT' ? (
-                            <button
-                              className={styles.uploadButton}
-                              onClick={() => setUploadTarget(deliverable)}
-                              type="button"
-                            >
-                              <Upload size={14} /> {submission ? 'Reenviar' : 'Enviar'}
-                            </button>
-                          ) : null}
-                        </div>
+                        {user?.role === 'PROFESSOR' && (
+                          <div className={styles.submissionList}>
+                            {professorSubmissions.length ? professorSubmissions.map((professorSubmission) => {
+                              const submissionStatus = professorSubmission.status
+                              return (
+                                <div className={styles.submissionRow} key={professorSubmission.id}>
+                                  <div className={styles.submissionStudent}>
+                                    <strong>{getPersonName(professorSubmission.studentId, `Discente ${professorSubmission.studentId}`)}</strong>
+                                    {professorSubmission.feedback && (
+                                      <span>Feedback: {professorSubmission.feedback}</span>
+                                    )}
+                                  </div>
+                                  <span className={`${styles.statusBadge} ${
+                                    submissionStatus === 'APPROVED' ? styles.statusSuccess
+                                      : submissionStatus === 'REJECTED' ? styles.statusRejected
+                                        : styles.statusPending
+                                  }`}>
+                                    {submissionStatusLabels[submissionStatus]}
+                                  </span>
+                                  <button
+                                    className={`${styles.uploadButton} ${styles.viewButton}`}
+                                    onClick={() => setViewTarget({ deliverable, submission: professorSubmission })}
+                                    type="button"
+                                  >
+                                    <Eye size={14} /> Ver envio
+                                  </button>
+                                </div>
+                              )
+                            }) : (
+                              <p className={styles.emptyInline}>Nenhum envio de discente recebido.</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )
                   })
@@ -406,7 +451,7 @@ function MyProjectsPage() {
         {ongoingCandidacies.map(renderCandidacyCard)}
         {completedCandidacies.length > 0 && (
           <details className={styles.completedGroup} open>
-            <summary>Concluídas <span className={styles.dashboardTabCount}>{completedCandidacies.length}</span></summary>
+            <summary>Concluídas <span className={styles.countBadge}>{completedCandidacies.length}</span></summary>
             <div className={styles.itemList}>{completedCandidacies.map(renderCandidacyCard)}</div>
           </details>
         )}
@@ -754,6 +799,7 @@ function MyProjectsPage() {
           <div className={styles.headerActions}>
             <ProjectsAndProcessesLink />
             <NotificationMenu />
+            <ProfileLink />
             <button
               aria-label="Sair da conta"
               className={styles.logoutButton}
@@ -790,20 +836,26 @@ function MyProjectsPage() {
           )}
         </div>
 
-        <section className={styles.summaryGrid} aria-label="Resumo">
+        <section className={styles.summaryGrid} aria-label="Seções do painel" role="tablist">
           <button
-            aria-pressed={activeDashboardTab === dashboardTabs[0].id}
+            aria-controls="my-projects-tab-panel"
+            aria-selected={activeDashboardTab === dashboardTabs[0].id}
             className={`${styles.summaryCard} ${activeDashboardTab === dashboardTabs[0].id ? styles.summaryCardActive : ''}`}
+            id={`dashboard-tab-${dashboardTabs[0].id}`}
             onClick={() => setSelectedDashboardTab(dashboardTabs[0].id)}
+            role="tab"
             type="button"
           >
             <span className={`${styles.summaryIcon} ${styles.projectIcon}`}><FolderKanban size={18} /></span>
             <div><small>Projetos ativos</small><strong>{activeProjects.length + approvedCandidacies.length + activeCollaborations.length}</strong></div>
           </button>
           <button
-            aria-pressed={activeDashboardTab === dashboardTabs[1].id}
+            aria-controls="my-projects-tab-panel"
+            aria-selected={activeDashboardTab === dashboardTabs[1].id}
             className={`${styles.summaryCard} ${activeDashboardTab === dashboardTabs[1].id ? styles.summaryCardActive : ''}`}
+            id={`dashboard-tab-${dashboardTabs[1].id}`}
             onClick={() => setSelectedDashboardTab(dashboardTabs[1].id)}
+            role="tab"
             type="button"
           >
             <span className={`${styles.summaryIcon} ${styles.pendingIcon}`}><Clock3 size={18} /></span>
@@ -813,9 +865,12 @@ function MyProjectsPage() {
             </div>
           </button>
           <button
-            aria-pressed={activeDashboardTab === dashboardTabs[2].id}
+            aria-controls="my-projects-tab-panel"
+            aria-selected={activeDashboardTab === dashboardTabs[2].id}
             className={`${styles.summaryCard} ${activeDashboardTab === dashboardTabs[2].id ? styles.summaryCardActive : ''}`}
+            id={`dashboard-tab-${dashboardTabs[2].id}`}
             onClick={() => setSelectedDashboardTab(dashboardTabs[2].id)}
+            role="tab"
             type="button"
           >
             <span className={`${styles.summaryIcon} ${styles.proposalIcon}`}><UsersRound size={18} /></span>
@@ -837,27 +892,7 @@ function MyProjectsPage() {
         {isLoading ? (
           <p className={styles.loadingState} role="status">Carregando seu painel...</p>
         ) : (
-          <>
-            <div className={styles.dashboardTabs} role="tablist" aria-label="Seções do painel">
-              {dashboardTabs.map((tab) => (
-                <button
-                  aria-controls="my-projects-tab-panel"
-                  aria-selected={activeDashboardTab === tab.id}
-                  className={`${styles.dashboardTab} ${
-                    activeDashboardTab === tab.id ? styles.dashboardTabActive : ''
-                  }`}
-                  id={`dashboard-tab-${tab.id}`}
-                  key={tab.id}
-                  onClick={() => setSelectedDashboardTab(tab.id)}
-                  role="tab"
-                  type="button"
-                >
-                  {tab.label}
-                  <span className={styles.dashboardTabCount}>{tab.count}</span>
-                </button>
-              ))}
-            </div>
-            <section
+          <section
               aria-labelledby={`dashboard-tab-${activeDashboardTab}`}
               className={styles.section}
               id="my-projects-tab-panel"
@@ -870,7 +905,6 @@ function MyProjectsPage() {
               {activeDashboardTab === 'teacher-projects' && renderActiveProjects()}
               {activeDashboardTab === 'teacher-orientations' && renderTeacherInterests()}
             </section>
-          </>
         )}
         <button className={styles.reloadButton} onClick={() => void reload()} type="button">
           <RefreshCw size={14} /> Atualizar painel
@@ -881,6 +915,30 @@ function MyProjectsPage() {
           deliverable={viewTarget.deliverable}
           onClose={() => setViewTarget(null)}
           submission={viewTarget.submission}
+          studentName={viewTarget.submission
+            ? getPersonName(viewTarget.submission.studentId, `Discente ${viewTarget.submission.studentId}`)
+            : undefined}
+          isProfessor={user.role === 'PROFESSOR'}
+          onReview={async (submissionId, status, feedback) => {
+            const success = await runAction(
+              () => reviewSubmission(submissionId, status, feedback),
+              status === 'APPROVED' ? 'Submissão aprovada com sucesso.' : 'Submissão rejeitada com feedback.',
+            )
+            if (success) {
+              const updatedStatus = status
+              setViewTarget((current) => current?.submission
+                ? {
+                  ...current,
+                  submission: {
+                    ...current.submission,
+                    status: updatedStatus,
+                    feedback: status === 'REJECTED' ? feedback?.trim() : null,
+                  },
+                }
+                : current)
+            }
+            return success
+          }}
         />
       )}
       {uploadTarget && (
@@ -1252,11 +1310,21 @@ function SubmissionViewDialog({
   deliverable,
   submission,
   onClose,
+  studentName,
+  isProfessor = false,
+  onReview,
 }: {
   deliverable: DeliverableResponse
   submission: SubmissionResponse | undefined
   onClose: () => void
+  studentName?: string
+  isProfessor?: boolean
+  onReview?: (submissionId: number, status: 'APPROVED' | 'REJECTED', feedback?: string) => Promise<boolean>
 }) {
+  const [isRejecting, setIsRejecting] = useState(false)
+  const [feedback, setFeedback] = useState(submission?.feedback ?? '')
+  const [isReviewing, setIsReviewing] = useState(false)
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -1284,9 +1352,20 @@ function SubmissionViewDialog({
         </button>
         <h2 id="submission-view-title">{deliverable.title}</h2>
         <dl className={styles.submissionDetails}>
+          {isProfessor && (
+            <div><dt>Discente</dt><dd>{studentName ?? 'Não informado'}</dd></div>
+          )}
           <div>
             <dt>Status</dt>
-            <dd><span className={`${styles.statusBadge} ${styles.statusSuccess}`}>Aprovado</span></dd>
+            <dd>
+              <span className={`${styles.statusBadge} ${
+                submission?.status === 'APPROVED' ? styles.statusSuccess
+                  : submission?.status === 'REJECTED' ? styles.statusRejected
+                    : styles.statusPending
+              }`}>
+                {submission ? submissionStatusLabels[submission.status] : 'Aguardando envio'}
+              </span>
+            </dd>
           </div>
           <div><dt>Arquivo enviado</dt><dd>{submission?.filePath ?? 'Não informado'}</dd></div>
           <div><dt>Prazo do entregável</dt><dd>{formatDate(deliverable.deadline)}</dd></div>
@@ -1294,8 +1373,73 @@ function SubmissionViewDialog({
             <dt>Data do envio</dt>
             <dd>{submission?.submittedAt ? formatDate(submission.submittedAt) : 'Não informada'}</dd>
           </div>
+          {submission?.feedback && (
+            <div><dt>Feedback da avaliação</dt><dd>{submission.feedback}</dd></div>
+          )}
         </dl>
+        {isProfessor && isRejecting && submission?.status === 'PENDING' && (
+          <label className={styles.dialogField}>
+            Motivo da rejeição
+            <textarea
+              value={feedback}
+              onChange={(event) => setFeedback(event.target.value)}
+              placeholder="Descreva brevemente o que precisa ser corrigido."
+              maxLength={500}
+            />
+          </label>
+        )}
         <div className={styles.dialogActions}>
+          {isProfessor && submission?.status === 'PENDING' && onReview && (
+            <>
+              {isRejecting ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={isReviewing}
+                    onClick={() => setIsRejecting(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className={styles.rejectButton}
+                    type="button"
+                    disabled={isReviewing || !feedback.trim()}
+                    onClick={async () => {
+                      setIsReviewing(true)
+                      const success = await onReview(submission.id, 'REJECTED', feedback)
+                      setIsReviewing(false)
+                      if (success) setIsRejecting(false)
+                    }}
+                  >
+                    Confirmar rejeição
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={styles.rejectButton}
+                    type="button"
+                    disabled={isReviewing}
+                    onClick={() => setIsRejecting(true)}
+                  >
+                    Rejeitar
+                  </button>
+                  <button
+                    className={styles.acceptButton}
+                    type="button"
+                    disabled={isReviewing}
+                    onClick={async () => {
+                      setIsReviewing(true)
+                      await onReview(submission.id, 'APPROVED')
+                      setIsReviewing(false)
+                    }}
+                  >
+                    Aprovar
+                  </button>
+                </>
+              )}
+            </>
+          )}
           <button className={styles.primaryButton} onClick={onClose} type="button">Fechar</button>
         </div>
       </section>

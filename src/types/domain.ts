@@ -337,6 +337,7 @@ export interface SubmissionResponse {
   filePath: string | null
   submittedAt: string | null
   status: SubmissionStatus
+  feedback?: string | null
 }
 
 export interface SubmissionVersionResponse {

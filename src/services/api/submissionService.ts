@@ -26,4 +26,13 @@ export const submissionService: SubmissionService = {
     )
     return data
   },
+
+  async review(submissionId, status, feedback, signal?: AbortSignal) {
+    const { data } = await api.patch<SubmissionResponse>(
+      `/submissions/${submissionId}/review`,
+      { status, feedback: feedback?.trim() || null },
+      { signal },
+    )
+    return data
+  },
 }

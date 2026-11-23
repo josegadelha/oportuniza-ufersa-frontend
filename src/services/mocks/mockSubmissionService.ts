@@ -51,6 +51,15 @@ const initialMockSubmissions: SubmissionResponse[] = [
     status: 'PENDING',
   },
   {
+    id: 7,
+    deliverableId: 4,
+    studentId: 3,
+    filePath: 'Inventario_Fontes_Ana.pdf',
+    submittedAt: '2026-09-18T09:15:00',
+    status: 'REJECTED',
+    feedback: 'Inclua as fontes oficiais e indique a metodologia de coleta.',
+  },
+  {
     id: 6,
     deliverableId: 6,
     studentId: 1,
@@ -69,6 +78,7 @@ function isSubmission(value: unknown): value is SubmissionResponse {
     && 'submittedAt' in value && (typeof value.submittedAt === 'string' || value.submittedAt === null)
     && 'status' in value
     && ['WAITING', 'PENDING', 'APPROVED', 'REJECTED'].includes(String(value.status))
+    && (!('feedback' in value) || typeof value.feedback === 'string' || value.feedback === null)
 }
 
 function isVersion(value: unknown): value is SubmissionVersionResponse {
@@ -193,6 +203,30 @@ export const mockSubmissionService: SubmissionService = {
         { versionNumber: previousVersions.length + 1, filePath: filePath.trim(), submittedAt },
       ],
     }
+    save()
+    return structuredClone(updated)
+  },
+
+  async review(submissionId, status, feedback) {
+    await simulateNetworkDelay()
+    const session = readAuthSession()
+    const submission = submissions.find((item) => item.id === submissionId)
+    if (!session || session.user.role !== 'PROFESSOR' || !submission || !isVisibleToCurrentUser(submission)) {
+      throw new Error('Somente o docente responsável pode avaliar esta submissão.')
+    }
+    if (submission.status !== 'PENDING') {
+      throw new Error('Somente submissões em análise podem ser avaliadas.')
+    }
+    if (status === 'REJECTED' && (!feedback?.trim())) {
+      throw new Error('Informe um breve motivo para a rejeição.')
+    }
+
+    const updated: SubmissionResponse = {
+      ...submission,
+      status,
+      feedback: status === 'REJECTED' ? feedback?.trim() : null,
+    }
+    submissions = submissions.map((item) => item.id === submissionId ? updated : item)
     save()
     return structuredClone(updated)
   },
