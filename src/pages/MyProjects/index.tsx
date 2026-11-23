@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { BriefcaseBusiness, Check, Clock3, Eye, FileText, FolderKanban, GraduationCap, LogOut, Mail, Plus, RefreshCw, Upload, UsersRound, X } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import { useMyProjects } from '../hooks/useMyProjects'
-import { useNotificationActions } from '../hooks/useNotificationActions'
-import NotificationMenu from './NotificationMenu'
-import { ProjectsAndProcessesLink } from './Header'
-import styles from './MyProjectsPage.module.css'
+import { useAuth } from '../../hooks/useAuth'
+import { useMyProjects } from '../../hooks/useMyProjects'
+import { useNotificationActions } from '../../hooks/useNotificationActions'
+import NotificationMenu from '../../UI/NotificationMenu'
+import { ProjectsAndProcessesLink } from '../../UI/Header'
+import styles from './MyProjects.module.css'
 import type {
   CandidacyResponse,
   CandidacyStatus,
@@ -18,8 +18,8 @@ import type {
   OpportunityType,
   ProjectResponse,
   SubmissionResponse,
-} from '../types/domain'
-import type { ServiceResult } from '../services/result'
+} from '../../types/domain'
+import type { ServiceResult } from '../../services/result'
 
 const candidacyStatusLabels: Record<CandidacyStatus, string> = {
   IN_SELECTION: 'Pendente',
