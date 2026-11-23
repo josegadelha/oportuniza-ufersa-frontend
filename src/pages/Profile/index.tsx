@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
-  ArrowRight,
   BookOpen,
   BriefcaseBusiness,
   ExternalLink,
@@ -14,14 +13,12 @@ import {
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { courseLabels, departmentLabels } from '../../constants/domainLabels'
 import { useAuth } from '../../hooks/useAuth'
-import { useCandidacies } from '../../hooks/useCandidacies'
 import { useOpportunities } from '../../hooks/useOpportunities'
 import { useProjectProposals } from '../../hooks/useProjectProposals'
 import { useProfile, type ProfileUpdate } from '../../hooks/useProfile'
 import { ProjectsAndProcessesLink } from '../../UI/Header'
 import NotificationMenu from '../../UI/NotificationMenu'
 import type {
-  CandidacyStatus,
   OpportunityStatus,
   OpportunityType,
   ProjectProposalStatus,
@@ -54,16 +51,6 @@ const opportunityStatusLabels: Record<OpportunityStatus, string> = {
   OPEN: 'Inscrições abertas',
   CLOSED: 'Encerrada',
   FINISHED: 'Finalizada',
-}
-
-const candidacyStatusLabels: Record<CandidacyStatus, string> = {
-  IN_SELECTION: 'Em seleção',
-  HISTORY_REVIEW: 'Análise de histórico',
-  INTERVIEW: 'Entrevista',
-  FINAL_REVIEW: 'Avaliação final',
-  APPROVED: 'Aprovada',
-  REJECTED: 'Não selecionada',
-  WITHDRAWN: 'Retirada',
 }
 
 const proposalStatusLabels: Record<ProjectProposalStatus, string> = {
@@ -147,14 +134,6 @@ function ProfileView({ profileId }: { profileId?: string }) {
   const isProfessor = profile?.role === 'PROFESSOR'
   const { opportunities, isLoading: opportunitiesLoading, error: opportunitiesError } =
     useOpportunities(Boolean(isProfessor && isOwnProfile))
-  const studentId = isOwnProfile && user?.role === 'STUDENT' && profile?.role === 'STUDENT'
-    ? user.profile.id
-    : null
-  const {
-    candidacies,
-    isLoading: candidaciesLoading,
-    error: candidaciesError,
-  } = useCandidacies(studentId)
   const {
     proposals,
     isLoading: proposalsLoading,
@@ -270,9 +249,6 @@ function ProfileView({ profileId }: { profileId?: string }) {
             <span className={styles.brandName}>oportuniza<span>.</span></span>
           </Link>
           <div className={styles.headerActions}>
-            <Link className={styles.headerLink} to="/">
-              <ArrowLeft size={16} /> Oportunidades
-            </Link>
             <ProjectsAndProcessesLink />
             <NotificationMenu />
             <button className={styles.logoutButton} onClick={logout} type="button" aria-label="Sair da conta">
@@ -483,7 +459,7 @@ function ProfileView({ profileId }: { profileId?: string }) {
                     Descrição acadêmica
                     <textarea
                       onChange={(event) => updateForm('description', event.target.value)}
-                      rows={4}
+                      rows={3}
                       value={form.description}
                     />
                   </label>
@@ -494,7 +470,7 @@ function ProfileView({ profileId }: { profileId?: string }) {
                         <textarea
                           onChange={(event) => updateForm('skills', event.target.value)}
                           placeholder="Uma habilidade por linha"
-                          rows={4}
+                          rows={3}
                           value={form.skills}
                         />
                       </label>
@@ -503,7 +479,7 @@ function ProfileView({ profileId }: { profileId?: string }) {
                         <textarea
                           onChange={(event) => updateForm('interests', event.target.value)}
                           placeholder="Um interesse por linha"
-                          rows={4}
+                          rows={3}
                           value={form.interests}
                         />
                       </label>
@@ -516,7 +492,7 @@ function ProfileView({ profileId }: { profileId?: string }) {
                         <textarea
                           onChange={(event) => updateForm('researchAreas', event.target.value)}
                           placeholder="Uma área por linha"
-                          rows={4}
+                          rows={3}
                           value={form.researchAreas}
                         />
                       </label>
@@ -525,7 +501,7 @@ function ProfileView({ profileId }: { profileId?: string }) {
                         <textarea
                           onChange={(event) => updateForm('researchLines', event.target.value)}
                           placeholder="Uma linha por linha"
-                          rows={4}
+                          rows={3}
                           value={form.researchLines}
                         />
                       </label>
@@ -581,47 +557,6 @@ function ProfileView({ profileId }: { profileId?: string }) {
                       </div>
                       <ProfileTags items={studentProfile.extras.interests} emptyMessage={emptyListMessage} />
                     </section>
-                    {isOwnProfile && (
-                      <section className={`${styles.profileCard} ${styles.listCard} ${styles.activityCard}`}>
-                        <div className={styles.sectionHeading}>
-                          <span>OPORTUNIDADES</span>
-                          <h2>Minhas candidaturas <small>({candidacies.length})</small></h2>
-                        </div>
-                        {candidaciesLoading ? (
-                          <p className={styles.emptyList} role="status">Carregando candidaturas...</p>
-                        ) : candidaciesError ? (
-                          <p className={styles.inlineError} role="alert">{candidaciesError}</p>
-                        ) : candidacies.length ? (
-                          <div className={styles.activityList}>
-                            {candidacies.map((candidacy) => {
-                              const opportunity = opportunities.find((item) => item.id === candidacy.opportunityId)
-                              return (
-                                <article className={styles.activityItem} key={candidacy.id}>
-                                  <span className={styles.activityIcon}><BookOpen size={17} /></span>
-                                  <div className={styles.activityContent}>
-                                    <strong>{opportunity?.title ?? 'Oportunidade acadêmica'}</strong>
-                                    <span>
-                                      {opportunity
-                                        ? opportunityTypeLabels[opportunity.type]
-                                        : 'Candidatura enviada'}
-                                    </span>
-                                  </div>
-                                  <span className={`${styles.statusBadge} ${candidacy.status === 'APPROVED' ? styles.statusSuccess : ''}`}>
-                                    {candidacyStatusLabels[candidacy.status]}
-                                  </span>
-                                </article>
-                              )
-                            })}
-                          </div>
-                        ) : (
-                          <div className={styles.emptyActivity}>
-                            <BookOpen size={22} />
-                            <p>Suas candidaturas aparecerão aqui.</p>
-                            <Link to="/">Explorar oportunidades <ArrowRight size={14} /></Link>
-                          </div>
-                        )}
-                      </section>
-                    )}
                     </div>
                     <section className={`${styles.profileCard} ${styles.listCard} ${styles.activityCard}`}>
                       <div className={styles.sectionHeading}>
