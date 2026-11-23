@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { getServiceErrorMessage } from '../services/errorMessage'
 import {
@@ -5,6 +6,10 @@ import {
   notificationService,
 } from '../services/notificationService'
 import type { NotificationResponse } from '../types/domain'
+
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<NotificationResponse[]>([])
@@ -17,14 +22,16 @@ export function useNotifications() {
     try {
       setNotifications(await notificationService.list())
     } catch (loadError) {
-      setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as notificações.'))
+      if (!isAbortError(loadError)) {
+        setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as notificações.'))
+      }
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    let isCurrent = true
+    const controller = new AbortController()
     const handleNotificationCreated = (event: Event) => {
       const notification = (event as CustomEvent<NotificationResponse>).detail
       setNotifications((current) => [
@@ -34,20 +41,20 @@ export function useNotifications() {
     }
 
     window.addEventListener(NOTIFICATION_CREATED_EVENT, handleNotificationCreated)
-    notificationService.list()
+    notificationService.list(controller.signal)
       .then((items) => {
-        if (isCurrent) setNotifications(items)
+        setNotifications(items)
       })
       .catch((loadError: unknown) => {
-        if (isCurrent) {
+        if (!isAbortError(loadError)) {
           setError(getServiceErrorMessage(loadError, 'Não foi possível carregar as notificações.'))
         }
       })
       .finally(() => {
-        if (isCurrent) setIsLoading(false)
+        setIsLoading(false)
       })
     return () => {
-      isCurrent = false
+      controller.abort()
       window.removeEventListener(NOTIFICATION_CREATED_EVENT, handleNotificationCreated)
     }
   }, [])
@@ -61,7 +68,9 @@ export function useNotifications() {
       )))
       return true
     } catch (markError) {
-      setError(getServiceErrorMessage(markError, 'Não foi possível atualizar a notificação.'))
+      if (!isAbortError(markError)) {
+        setError(getServiceErrorMessage(markError, 'Não foi possível atualizar a notificação.'))
+      }
       return false
     }
   }, [])
@@ -78,7 +87,9 @@ export function useNotifications() {
       )))
       return true
     } catch (markError: unknown) {
-      setError(getServiceErrorMessage(markError, 'Não foi possível atualizar as notificações.'))
+      if (!isAbortError(markError)) {
+        setError(getServiceErrorMessage(markError, 'Não foi possível atualizar as notificações.'))
+      }
       return false
     }
   }, [])

@@ -8,8 +8,8 @@ let nextLocalNotificationId = -1
 let localActionNotifications: NotificationResponse[] = []
 
 export const notificationService: NotificationService = {
-  async list(): Promise<NotificationResponse[]> {
-    const { data } = await api.get<NotificationResponse[]>('/notifications')
+  async list(signal?: AbortSignal): Promise<NotificationResponse[]> {
+    const { data } = await api.get<NotificationResponse[]>('/notifications', { signal })
     const recipientId = readAuthSession()?.user.profile.id
     const localNotifications = localActionNotifications
       .filter((notification) => notification.recipientId === recipientId)
@@ -17,7 +17,7 @@ export const notificationService: NotificationService = {
     return [...localNotifications, ...data]
   },
 
-  async create(input: NotificationCreateRequest): Promise<NotificationResponse> {
+  async create(input: NotificationCreateRequest, _signal?: AbortSignal): Promise<NotificationResponse> {
     const session = readAuthSession()
     if (!session) throw new Error('Entre para consultar suas notificações.')
     if (!input.title.trim() || !input.message.trim()) {
@@ -38,7 +38,7 @@ export const notificationService: NotificationService = {
     return structuredClone(notification)
   },
 
-  async markAsRead(notificationId: number): Promise<NotificationResponse> {
+  async markAsRead(notificationId: number, signal?: AbortSignal): Promise<NotificationResponse> {
     if (notificationId < 0) {
       const notification = localActionNotifications.find((item) => item.id === notificationId)
       if (!notification) throw new Error('Notificação não encontrada.')
@@ -51,16 +51,18 @@ export const notificationService: NotificationService = {
 
     const { data } = await api.patch<NotificationResponse>(
       `/notifications/${notificationId}/read`,
+      undefined,
+      { signal },
     )
     return data
   },
 
-  async markAllAsRead(): Promise<NotificationResponse[]> {
-    const notifications = await this.list()
+  async markAllAsRead(signal?: AbortSignal): Promise<NotificationResponse[]> {
+    const notifications = await this.list(signal)
     return Promise.all(
       notifications
         .filter((notification) => !notification.isRead)
-        .map((notification) => this.markAsRead(notification.id)),
+        .map((notification) => this.markAsRead(notification.id, signal)),
     )
   },
 }
