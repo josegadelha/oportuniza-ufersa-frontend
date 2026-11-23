@@ -3,10 +3,10 @@ import { mockSubmissionService } from './mocks/mockSubmissionService'
 import type { SubmissionResponse, SubmissionVersionResponse } from '../types/domain'
 
 export interface SubmissionService {
-  list(): Promise<SubmissionResponse[]>
-  listByDeliverable(deliverableId: number): Promise<SubmissionResponse[]>
-  versions(submissionId: number): Promise<SubmissionVersionResponse[]>
-  submit(deliverableId: number, filePath: string): Promise<SubmissionResponse>
+  list(signal?: AbortSignal): Promise<SubmissionResponse[]>
+  listByDeliverable(deliverableId: number, signal?: AbortSignal): Promise<SubmissionResponse[]>
+  versions(submissionId: number, signal?: AbortSignal): Promise<SubmissionVersionResponse[]>
+  submit(deliverableId: number, filePath: string, signal?: AbortSignal): Promise<SubmissionResponse>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'

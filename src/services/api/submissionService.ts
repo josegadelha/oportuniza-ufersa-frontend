@@ -3,25 +3,26 @@ import { api } from './api'
 import type { SubmissionResponse, SubmissionVersionResponse } from '../../types/domain'
 
 export const submissionService: SubmissionService = {
-  async list() {
-    const { data } = await api.get<SubmissionResponse[]>('/submissions')
+  async list(signal?: AbortSignal) {
+    const { data } = await api.get<SubmissionResponse[]>('/submissions', { signal })
     return data
   },
 
-  async listByDeliverable(deliverableId) {
-    const { data } = await api.get<SubmissionResponse[]>(`/deliverables/${deliverableId}/submissions`)
+  async listByDeliverable(deliverableId, signal?: AbortSignal) {
+    const { data } = await api.get<SubmissionResponse[]>(`/deliverables/${deliverableId}/submissions`, { signal })
     return data
   },
 
-  async versions(submissionId) {
-    const { data } = await api.get<SubmissionVersionResponse[]>(`/submissions/${submissionId}/versions`)
+  async versions(submissionId, signal?: AbortSignal) {
+    const { data } = await api.get<SubmissionVersionResponse[]>(`/submissions/${submissionId}/versions`, { signal })
     return data
   },
 
-  async submit(deliverableId, filePath) {
+  async submit(deliverableId, filePath, signal?: AbortSignal) {
     const { data } = await api.post<SubmissionResponse>(
       `/deliverables/${deliverableId}/submissions`,
       { filePath },
+      { signal },
     )
     return data
   },
