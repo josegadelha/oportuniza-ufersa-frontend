@@ -3,7 +3,7 @@ import { mockProjectService } from './mocks/mockProjectService'
 import type { ProjectResponse } from '../types/domain'
 
 export interface ProjectService {
-  list(): Promise<ProjectResponse[]>
+  list(signal?: AbortSignal): Promise<ProjectResponse[]>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'

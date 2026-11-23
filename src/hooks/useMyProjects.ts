@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useCallback, useEffect, useState } from 'react'
 import { getServiceErrorMessage } from '../services/errorMessage'
 import { useNotificationActions } from './useNotificationActions'
@@ -68,6 +69,10 @@ const emptyData: MyProjectsData = {
   people: {},
 }
 
+function isAbortError(error: unknown): boolean {
+  return axios.isCancel(error) || (error instanceof Error && (error.name === 'AbortError' || error.name === 'CanceledError'))
+}
+
 function isPendingCandidacy(status: CandidacyStatus) {
   return status !== 'APPROVED' && status !== 'REJECTED' && status !== 'WITHDRAWN'
 }
@@ -114,15 +119,15 @@ export function useMyProjects() {
   const [error, setError] = useState<string | null>(null)
   const [notificationError, setNotificationError] = useState<string | null>(null)
 
-  const loadData = useCallback(async (): Promise<MyProjectsData> => {
+  const loadData = useCallback(async (signal?: AbortSignal): Promise<MyProjectsData> => {
     if (!user) return emptyData
 
     try {
       const [proposalInterests, projects, deliverables, submissions] = await Promise.all([
-        proposalInterestService.list(),
-        projectService.list(),
-        deliverableService.list(),
-        submissionService.list(),
+        proposalInterestService.list(signal),
+        projectService.list(signal),
+        deliverableService.list(signal),
+        submissionService.list(signal),
       ])
 
       let candidacies: CandidacyResponse[] = []
@@ -132,19 +137,19 @@ export function useMyProjects() {
 
       if (user.role === 'STUDENT') {
         [candidacies, opportunities, proposals] = await Promise.all([
-          candidacyService.listByStudent(),
-          opportunityService.list(),
-          projectProposalService.list(),
+          candidacyService.listByStudent(signal),
+          opportunityService.list(signal),
+          projectProposalService.list(signal),
         ])
       } else {
         [opportunities, proposals] = await Promise.all([
-          opportunityService.listByProfessor(),
-          projectProposalService.list(),
+          opportunityService.listByProfessor(signal),
+          projectProposalService.list(signal),
         ])
         const candidacyGroups = await Promise.all(
           opportunities.map(async (opportunity) => ({
             opportunityId: opportunity.id,
-            items: await candidacyService.listByOpportunity(opportunity.id),
+            items: await candidacyService.listByOpportunity(opportunity.id, signal),
           })),
         )
         candidaciesByOpportunity = Object.fromEntries(
@@ -184,31 +189,31 @@ export function useMyProjects() {
     try {
       setData(await loadData())
     } catch (loadError: unknown) {
-      setError(getServiceErrorMessage(loadError, 'Não foi possível carregar seu painel.'))
+      if (!isAbortError(loadError)) {
+        setError(getServiceErrorMessage(loadError, 'Não foi possível carregar seu painel.'))
+      }
     } finally {
       setIsLoading(false)
     }
   }, [loadData])
 
   useEffect(() => {
-    let isCurrent = true
-    loadData()
+    const controller = new AbortController()
+    loadData(controller.signal)
       .then((loadedData) => {
-        if (isCurrent) {
-          setData(loadedData)
-          setError(null)
-        }
+        setData(loadedData)
+        setError(null)
       })
       .catch((loadError: unknown) => {
-        if (isCurrent) {
+        if (!isAbortError(loadError)) {
           setError(getServiceErrorMessage(loadError, 'Não foi possível carregar seu painel.'))
         }
       })
       .finally(() => {
-        if (isCurrent) setIsLoading(false)
+        setIsLoading(false)
       })
     return () => {
-      isCurrent = false
+      controller.abort()
     }
   }, [loadData])
 
