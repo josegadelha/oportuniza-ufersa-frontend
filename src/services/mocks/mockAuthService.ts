@@ -1,16 +1,21 @@
 import type { AuthService } from '../authService'
 import { simulateNetworkDelay } from './delay'
 import { mockUserService } from './mockUserService'
+import { initialMockAdditionalProfiles, initialMockUsers } from './users'
 import { clearAuthSession, readAuthSession, writeAuthSession } from '../sessionStorage'
-import type { UserProfile, UserRole } from '../../types/domain'
+import type { UserProfile } from '../../types/domain'
 
-function getRoleFromUsername(username: string): UserRole | null {
+function getUserIdFromUsername(username: string): number | undefined {
   const normalizedUsername = username.trim().toLocaleLowerCase('pt-BR')
-  if (['student', 'discente', 'aluno.ufersa'].includes(normalizedUsername)) return 'STUDENT'
-  if (['professor', 'docente', 'docente.ufersa', 'prof.ufersa'].includes(normalizedUsername)) {
-    return 'PROFESSOR'
+  if (['discente', 'aluno.ufersa'].includes(normalizedUsername)) {
+    return initialMockUsers.STUDENT.profile.id
   }
-  return null
+  if (['docente', 'docente.ufersa', 'prof.ufersa'].includes(normalizedUsername)) {
+    return initialMockUsers.PROFESSOR.profile.id
+  }
+  return [...Object.values(initialMockUsers), ...initialMockAdditionalProfiles].find(
+    (user) => user.profile.username.toLocaleLowerCase('pt-BR') === normalizedUsername,
+  )?.profile.id
 }
 
 export const mockAuthService: AuthService = {
@@ -20,12 +25,12 @@ export const mockAuthService: AuthService = {
       throw new Error('Informe seu usuário e sua senha.')
     }
 
-    const role = getRoleFromUsername(credentials.username)
-    if (!role) {
-      throw new Error('Usuário de teste não reconhecido. Use aluno.ufersa ou prof.ufersa.')
+    const userId = getUserIdFromUsername(credentials.username)
+    if (userId === undefined) {
+      throw new Error('Usuário de teste não reconhecido.')
     }
 
-    const user = await mockUserService.getCurrentProfile(role)
+    const user = await mockUserService.getProfileById(userId)
     const session = {
       accessToken: `mock-token-${Date.now()}`,
       user,
