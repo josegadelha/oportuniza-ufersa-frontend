@@ -5,6 +5,7 @@ import type {
   StudentProfileDetails,
   StudentProfileUpdate,
   UserProfileDetails,
+  ProjectProposalInviteCandidate,
   UserRole,
 } from '../../types/domain'
 import type { UserService } from '../userService'
@@ -12,6 +13,15 @@ import { readAuthSession } from '../sessionStorage'
 
 export const userService: UserService = {
   supportsExtendedProfileFields: false,
+
+  async listInviteCandidates(signal?: AbortSignal): Promise<ProjectProposalInviteCandidate[]> {
+    const { data } = await api.get<UserProfileDetails[]>('/users', { signal })
+    return data.map(({ role, profile }) => ({
+      userId: String(profile.id),
+      name: profile.name,
+      role: role === 'STUDENT' ? 'student' : 'professor',
+    }))
+  },
 
   async getCurrentProfile(role: UserRole, signal?: AbortSignal): Promise<UserProfileDetails> {
     if (role === 'STUDENT') {

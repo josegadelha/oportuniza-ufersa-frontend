@@ -6,6 +6,7 @@ import type {
   StudentProfileDetails,
   StudentProfileUpdate,
   UserProfileDetails,
+  ProjectProposalInviteCandidate,
   UserRole,
 } from '../types/domain'
 
@@ -13,6 +14,7 @@ export interface UserService {
   supportsExtendedProfileFields: boolean
   getCurrentProfile(role: UserRole, signal?: AbortSignal): Promise<UserProfileDetails>
   getProfileById(profileId: number, signal?: AbortSignal): Promise<UserProfileDetails>
+  listInviteCandidates(signal?: AbortSignal): Promise<ProjectProposalInviteCandidate[]>
   patchStudent(input: StudentProfileUpdate, signal?: AbortSignal): Promise<StudentProfileDetails>
   patchProfessor(input: ProfessorProfileUpdate, signal?: AbortSignal): Promise<ProfessorProfileDetails>
 }

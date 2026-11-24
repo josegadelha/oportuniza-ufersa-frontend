@@ -602,6 +602,27 @@
   font-size: 14px;
 }
 
+.proposalHeadingBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.privateBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #d6def0;
+  border-radius: 999px;
+  background: #f0f4fc;
+  padding: 3px 8px;
+  color: #3558a8;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
 .metadataRow {
   display: flex;
   flex-wrap: wrap;
@@ -744,6 +765,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.invitesManagement {
+  display: grid;
+  gap: 8px;
+  padding-top: 11px;
+  border-top: 1px solid var(--color-border);
+}
+
+.invitesManagement h4 {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .skillTag {

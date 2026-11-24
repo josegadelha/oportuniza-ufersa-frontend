@@ -1,0 +1,133 @@
+.invitePicker {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  color: #334155;
+  font-size: 13px;
+}
+
+.searchLabel {
+  display: grid;
+  gap: 6px;
+  font-weight: 650;
+}
+
+.searchLabel input,
+.addRow select {
+  min-width: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  padding: 9px 10px;
+  color: #1e293b;
+  font: inherit;
+}
+
+.searchLabel input:focus,
+.addRow select:focus {
+  border-color: #3558a8;
+  outline: 2px solid rgb(53 88 168 / 16%);
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+}
+
+.addRow select {
+  flex: 1;
+}
+
+.addRow button,
+.inviteRow button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 10px;
+  color: #3558a8;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.addRow button:disabled,
+.inviteRow button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.inviteList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inviteRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  padding: 7px 8px;
+}
+
+.inviteName {
+  overflow: hidden;
+  flex: 1;
+  color: #1e293b;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role,
+.status {
+  border-radius: 999px;
+  background: #e8eefb;
+  padding: 3px 8px;
+  color: #3558a8;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.status {
+  background: #eef2f7;
+  color: #475569;
+}
+
+.inviteRow button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #64748b;
+}
+
+.empty,
+.error {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.error {
+  color: #b42318;
+}
+
+@media (max-width: 480px) {
+  .addRow {
+    flex-direction: column;
+  }
+
+  .inviteRow {
+    flex-wrap: wrap;
+  }
+}

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bell, Check, CheckCheck, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '../hooks/useNotifications'
-import type { NotificationType } from '../types/domain'
+import type { NotificationResponse, NotificationType } from '../types/domain'
 import styles from './NotificationMenu.module.css'
 
 const typeLabels: Record<NotificationType, string> = {
   NEW_OPPORTUNITY: 'Nova oportunidade',
   SELECTION_PROCESS_UPDATE: 'Processo seletivo',
   PITCH_INTEREST: 'Interesse em proposta',
+  PROPOSAL_INVITE: 'Convite para proposta',
 }
 
 function formatDate(value: string) {
@@ -19,6 +21,7 @@ function formatDate(value: string) {
 function NotificationMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
   const {
     notifications,
     unreadCount,
@@ -28,6 +31,17 @@ function NotificationMenu() {
     markAsRead,
     markAllAsRead,
   } = useNotifications()
+
+  function openProposalInvite(notification: NotificationResponse) {
+    if (notification.projectProposalId === undefined) return
+    setIsOpen(false)
+    navigate('/', {
+      state: {
+        type: 'proposal-invite',
+        proposalId: notification.projectProposalId,
+      },
+    })
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -103,17 +117,36 @@ function NotificationMenu() {
             <p className={styles.status} role="status">Carregando notificações...</p>
           ) : notifications.length ? (
             <ul className={styles.list}>
-              {notifications.map((notification) => (
+              {notifications.map((notification) => {
+                const content = (
+                  <>
+                    <div className={styles.itemMeta}>
+                      {notification.title !== typeLabels[notification.type] && (
+                        <span>{typeLabels[notification.type]}</span>
+                      )}
+                      <time dateTime={notification.sentAt}>{formatDate(notification.sentAt)}</time>
+                    </div>
+                    <h3>{notification.title}</h3>
+                    <p>{notification.message}</p>
+                  </>
+                )
+                const isProposalInvite = notification.type === 'PROPOSAL_INVITE'
+                  && notification.projectProposalId !== undefined
+
+                return (
                 <li
                   className={`${styles.item} ${notification.isRead ? '' : styles.unread}`}
                   key={notification.id}
                 >
-                  <div className={styles.itemMeta}>
-                    <span>{typeLabels[notification.type]}</span>
-                    <time dateTime={notification.sentAt}>{formatDate(notification.sentAt)}</time>
-                  </div>
-                  <h3>{notification.title}</h3>
-                  <p>{notification.message}</p>
+                  {isProposalInvite ? (
+                    <button
+                      className={styles.notificationOpen}
+                      onClick={() => openProposalInvite(notification)}
+                      type="button"
+                    >
+                      {content}
+                    </button>
+                  ) : content}
                   {!notification.isRead && (
                     <button
                       className={styles.markRead}
@@ -124,7 +157,8 @@ function NotificationMenu() {
                     </button>
                   )}
                 </li>
-              ))}
+                )
+              })}
             </ul>
           ) : (
             !error && <p className={styles.status}>Nenhuma notificação no momento</p>

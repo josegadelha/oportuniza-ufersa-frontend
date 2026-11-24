@@ -47,4 +47,14 @@ export const initialMockNotifications: NotificationResponse[] = [
     isRead: true,
     sentAt: '2026-11-12T14:00:00',
   },
+  {
+    id: 6,
+    recipientId: MOCK_USER_IDS.studentRobotics,
+    title: 'Convite para proposta',
+    message: "Mariana Costa convidou você para a proposta 'Ir no cinema assistir godzilla minus zero'",
+    type: 'PROPOSAL_INVITE',
+    isRead: false,
+    sentAt: '2026-11-16T10:00:00',
+    projectProposalId: 9,
+  },
 ]

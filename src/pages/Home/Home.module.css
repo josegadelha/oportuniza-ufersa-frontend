@@ -995,6 +995,28 @@
   color: var(--color-text-disabled);
 }
 
+.private-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #d6def0;
+  border-radius: 999px;
+  background: #f0f4fc;
+  padding: 4px 9px;
+  color: #3558a8;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.privacy-helper {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
 .proposal-card-footer {
   display: flex;
   flex-wrap: wrap;
@@ -1455,6 +1477,79 @@
 .dialog-facts svg {
   flex: 0 0 auto;
   color: var(--color-primary);
+}
+
+.proposal-invite-banner {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  border: 1px solid rgb(53 88 168 / 35%);
+  border-radius: 10px;
+  background: #f3f6fc;
+  padding: 14px;
+  color: #263d70;
+}
+
+.proposal-invite-banner > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.proposal-invite-banner strong {
+  font-size: 14px;
+}
+
+.proposal-invite-banner span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.proposal-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.proposal-invite-accept,
+.proposal-invite-decline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid #3558a8;
+  border-radius: 8px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.proposal-invite-accept {
+  color: #fff;
+  background: #3558a8;
+}
+
+.proposal-invite-accept:hover:not(:disabled) {
+  background: #294987;
+}
+
+.proposal-invite-decline {
+  color: #3558a8;
+  background: #fff;
+}
+
+.proposal-invite-accept:disabled,
+.proposal-invite-decline:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.invite-response-feedback {
+  margin: 0;
+  color: #3558a8;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .requirements h3 {

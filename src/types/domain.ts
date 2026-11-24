@@ -173,9 +173,28 @@ export interface ProjectProposalResponse {
   status: ProjectProposalStatus
   publishedAt: string | null
   desiredSkills: string[]
+  isPrivate?: boolean
+  seekingAdvisor?: boolean
+  invites?: ProjectProposalInvite[]
+}
+
+export interface ProjectProposalInvite {
+  userId: string
+  name: string
+  role: 'student' | 'professor'
+  status: 'pending' | 'accepted'
+}
+
+export interface ProjectProposalInviteCandidate {
+  userId: string
+  name: string
+  role: 'student' | 'professor'
 }
 
 export interface ProjectProposalCard extends ProjectProposalResponse {
+  isPrivate: boolean
+  seekingAdvisor: boolean
+  invites: ProjectProposalInvite[]
   category: ProjectProposalCategory | null
   seeksAdvisor: boolean | null
   authorIds: number[]
@@ -187,6 +206,9 @@ export interface ProjectProposalCreateRequest {
   desiredSkills: string[]
   category: ProjectProposalCategory
   seeksAdvisor: boolean
+  seekingAdvisor: boolean
+  isPrivate: boolean
+  invites: ProjectProposalInvite[]
   status?: ProjectProposalStatus | null
   publishedAt?: string | null
 }
@@ -197,7 +219,12 @@ export interface ProjectProposalPatchRequest {
   desiredSkills?: string[] | null
   status?: ProjectProposalStatus | null
   publishedAt?: string | null
+  isPrivate?: boolean | null
+  seekingAdvisor?: boolean | null
+  invites?: ProjectProposalInvite[] | null
 }
+
+export type ProposalInviteDecision = 'accepted' | 'declined'
 
 export type ProposalInterestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED'
 
@@ -281,6 +308,7 @@ export type NotificationType =
   | 'NEW_OPPORTUNITY'
   | 'SELECTION_PROCESS_UPDATE'
   | 'PITCH_INTEREST'
+  | 'PROPOSAL_INVITE'
 
 export interface NotificationResponse {
   id: number
@@ -290,6 +318,7 @@ export interface NotificationResponse {
   type: NotificationType
   isRead: boolean
   sentAt: string
+  projectProposalId?: number
 }
 
 export interface NotificationCreateRequest {
@@ -297,6 +326,7 @@ export interface NotificationCreateRequest {
   message: string
   type: NotificationType
   recipientId?: number
+  projectProposalId?: number
 }
 
 export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED'

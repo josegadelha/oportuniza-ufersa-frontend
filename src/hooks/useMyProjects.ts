@@ -22,6 +22,7 @@ import type {
   OpportunityPatchRequest,
   OpportunityStatus,
   ProjectProposalCard,
+  ProjectProposalPatchRequest,
   ProposalInterestResponse,
   ProposalInterestStatus,
   ProjectResponse,
@@ -221,6 +222,7 @@ export function useMyProjects() {
   const sendNotification = useCallback(async (input: NotificationCreateRequest) => {
     const result = await createNotification(input)
     setNotificationError(result.success ? null : result.message)
+    return result
   }, [createNotification])
 
   const cancelCandidacy = useCallback(async (
@@ -345,7 +347,10 @@ export function useMyProjects() {
         ...proposal,
         ...result,
         category: result.category ?? proposal.category,
-        seeksAdvisor: result.seeksAdvisor ?? proposal.seeksAdvisor,
+        isPrivate: proposal.isPrivate === true,
+        seekingAdvisor: proposal.seekingAdvisor === true,
+        seeksAdvisor: proposal.seekingAdvisor === true,
+        invites: proposal.invites,
         authorIds: result.authorIds.length ? result.authorIds : proposal.authorIds,
       }
       setData((current) => ({
@@ -360,6 +365,60 @@ export function useMyProjects() {
       }
     }
   }, [data.proposals, user])
+
+  const updateProposal = useCallback(async (
+    proposalId: number,
+    input: ProjectProposalPatchRequest,
+  ): Promise<ServiceResult<ProjectProposalCard>> => {
+    const proposal = data.proposals.find((item) => item.id === proposalId)
+    if (!user || user.role !== 'STUDENT' || !proposal || proposal.studentId !== user.profile.id) {
+      return { success: false, message: 'Você não pode alterar esta proposta.' }
+    }
+
+    try {
+      const updated = await projectProposalService.patch(proposalId, input)
+      const newPendingInvites = (input.invites ?? []).filter((invite) => (
+        invite.status === 'pending'
+        && !proposal.invites.some((existing) => (
+          existing.userId === invite.userId && existing.status === 'pending'
+        ))
+      ))
+      setData((current) => ({
+        ...current,
+        proposals: current.proposals.map((item) => item.id === proposalId
+          ? {
+            ...item,
+            ...updated,
+            isPrivate: input.isPrivate == null ? item.isPrivate : input.isPrivate === true,
+            seekingAdvisor: input.seekingAdvisor == null
+              ? item.seekingAdvisor
+              : input.seekingAdvisor === true,
+            seeksAdvisor: input.seekingAdvisor == null
+              ? item.seeksAdvisor
+              : input.seekingAdvisor === true,
+            invites: input.invites ?? item.invites,
+          }
+          : item),
+      }))
+      const inviteNotificationResults = await Promise.all(
+        newPendingInvites.map((invite) => sendNotification({
+          title: 'Convite para proposta',
+          message: `${user.profile.name} convidou você para a proposta '${proposal.title}'`,
+          type: 'PROPOSAL_INVITE',
+          recipientId: Number(invite.userId),
+          projectProposalId: proposal.id,
+        })),
+      )
+      const failedNotification = inviteNotificationResults.find((result) => !result.success)
+      if (failedNotification) setNotificationError(failedNotification.message)
+      return { success: true, data: updated }
+    } catch (actionError: unknown) {
+      return {
+        success: false,
+        message: getServiceErrorMessage(actionError, 'Não foi possível atualizar os convites.'),
+      }
+    }
+  }, [data.proposals, sendNotification, user])
 
   const updateOpportunityStatus = useCallback(async (
     opportunityId: number,
@@ -535,6 +594,7 @@ export function useMyProjects() {
     reviewCandidacy,
     reviewProposalInterest,
     closeProposal,
+    updateProposal,
     updateOpportunityStatus,
     editOpportunity,
     createOpportunity,

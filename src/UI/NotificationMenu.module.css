@@ -161,7 +161,34 @@
   font-weight: 700;
 }
 
+.notificationOpen {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notificationOpen:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid #3558a8;
+  outline-offset: 4px;
+}
+
+.notificationOpen:hover h3 {
+  color: #3558a8;
+}
+
 .item > p {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.notificationOpen > p {
   margin: 0;
   color: var(--color-text-subtle);
   font-size: 14px;

@@ -5,8 +5,9 @@ import type { NotificationCreateRequest, NotificationResponse } from '../types/d
 export interface NotificationService {
   list(signal?: AbortSignal): Promise<NotificationResponse[]>
   create(input: NotificationCreateRequest, signal?: AbortSignal): Promise<NotificationResponse>
-  markAsRead(notificationId: number, signal?: AbortSignal): Promise<NotificationResponse>
+  markAsRead(notificationId: number, signal?: AbortSignal): Promise<NotificationResponse | null>
   markAllAsRead(signal?: AbortSignal): Promise<NotificationResponse[]>
+  markProposalInviteAsRead(proposalId: number, signal?: AbortSignal): Promise<NotificationResponse[]>
 }
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
@@ -16,3 +17,4 @@ export const notificationService: NotificationService = USE_MOCKS
   : apiNotificationService
 
 export const NOTIFICATION_CREATED_EVENT = 'oportuniza:notification-created'
+export const NOTIFICATION_UPDATED_EVENT = 'oportuniza:notification-updated'

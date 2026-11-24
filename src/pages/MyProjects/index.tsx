@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { BriefcaseBusiness, Check, Clock3, Eye, FileText, FolderKanban, GraduationCap, LogOut, Mail, Plus, RefreshCw, Upload, UsersRound, X } from 'lucide-react'
+import { BriefcaseBusiness, Check, Clock3, Eye, FileText, FolderKanban, GraduationCap, LockKeyhole, LogOut, Mail, Plus, RefreshCw, Upload, UsersRound, X } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useMyProjects } from '../../hooks/useMyProjects'
 import { useNotificationActions } from '../../hooks/useNotificationActions'
+import ProposalInvitePicker from '../../components/ProposalInvitePicker'
+import { canViewStudentProposal } from '../../services/studentProposalVisibility'
 import NotificationMenu from '../../UI/NotificationMenu'
 import { ProfileLink, ProjectsAndProcessesLink } from '../../UI/Header'
 import styles from './MyProjects.module.css'
@@ -145,6 +147,7 @@ function MyProjectsPage() {
     reviewCandidacy,
     reviewProposalInterest,
     closeProposal,
+    updateProposal,
     updateOpportunityStatus,
     createDeliverable,
     submitDeliverable,
@@ -173,9 +176,12 @@ function MyProjectsPage() {
 
   if (!user) return <Navigate to="/login" replace />
 
+  const visibleProposals = data.proposals.filter((proposal) => (
+    canViewStudentProposal(proposal, user)
+  ))
   const myProposals = user.role === 'STUDENT'
-    ? data.proposals.filter((proposal) => (
-      proposal.studentId === user.profile.id || proposal.authorIds.includes(user.profile.id)
+    ? visibleProposals.filter((proposal) => (
+      proposal.studentId === user.profile.id
     ))
     : []
   const myProposalIds = new Set(myProposals.map((proposal) => proposal.id))
@@ -186,10 +192,14 @@ function MyProjectsPage() {
       interest.userId === user.profile.id
         && interest.status === 'ACCEPTED'
         && !myProposalIds.has(interest.projectProposalId)
+      && visibleProposals.some((proposal) => proposal.id === interest.projectProposalId)
     ))
     : []
   const teacherInterests = user.role === 'PROFESSOR'
-    ? data.proposalInterests.filter((interest) => interest.userId === user.profile.id)
+    ? data.proposalInterests.filter((interest) => (
+      interest.userId === user.profile.id
+      && visibleProposals.some((proposal) => proposal.id === interest.projectProposalId)
+    ))
     : []
   const pendingCandidacies = data.candidacies.filter((item) => (
     item.status !== 'APPROVED' && item.status !== 'REJECTED' && item.status !== 'WITHDRAWN'
@@ -276,9 +286,9 @@ function MyProjectsPage() {
       }))
     const acceptedCollaborationItems = activeCollaborations.map((interest) => ({
       key: `interest-${interest.id}`,
-      title: data.proposals.find((item) => item.id === interest.projectProposalId)?.title
+      title: visibleProposals.find((item) => item.id === interest.projectProposalId)?.title
         ?? 'Proposta de aluno',
-      personId: data.proposals.find((item) => item.id === interest.projectProposalId)?.studentId,
+      personId: visibleProposals.find((item) => item.id === interest.projectProposalId)?.studentId,
       personLabel: 'Autor da proposta',
     }))
 
@@ -549,20 +559,36 @@ function MyProjectsPage() {
                   <h3>{proposal.title}</h3>
                   <p>{proposal.description}</p>
                 </div>
-                <span className={`${styles.statusBadge} ${
-                  proposal.status === 'CLOSED' ? styles.statusMuted : styles.statusPending
-                }`}>
-                  {proposal.status === 'CLOSED'
-                    ? 'Encerrada'
-                    : proposal.status === 'IN_PROGRESS'
-                      ? 'Em andamento'
-                      : 'Aberta'}
-                </span>
+                <div className={styles.proposalHeadingBadges}>
+                  {proposal.isPrivate && (
+                    <span className={styles.privateBadge}><LockKeyhole size={13} /> Privada</span>
+                  )}
+                  <span className={`${styles.statusBadge} ${
+                    proposal.status === 'CLOSED' ? styles.statusMuted : styles.statusPending
+                  }`}>
+                    {proposal.status === 'CLOSED'
+                      ? 'Encerrada'
+                      : proposal.status === 'IN_PROGRESS'
+                        ? 'Em andamento'
+                        : 'Aberta'}
+                  </span>
+                </div>
               </div>
               <div className={styles.proposalTags}>
                 {proposal.desiredSkills.map((skill) => (
                   <span className={styles.skillTag} key={skill}>{skill}</span>
                 ))}
+              </div>
+              <div className={styles.invitesManagement}>
+                <h4>Convidados</h4>
+                <ProposalInvitePicker
+                  invites={proposal.invites}
+                  onChange={(invites) => void runAction(
+                    () => updateProposal(proposal.id, { invites }),
+                    'Lista de convidados atualizada.',
+                  )}
+                  disabled={isWorking}
+                />
               </div>
               <div className={styles.requestList}>
                 <h4>Solicitações de colaboração e orientação</h4>
@@ -750,7 +776,7 @@ function MyProjectsPage() {
     return (
       <div className={styles.itemList}>
         {teacherInterests.map((interest) => {
-          const proposal = data.proposals.find((item) => item.id === interest.projectProposalId)
+          const proposal = visibleProposals.find((item) => item.id === interest.projectProposalId)
           return (
             <article className={styles.itemCard} key={interest.id}>
               <span className={`${styles.itemIcon} ${styles.orientationIcon}`}><UsersRound size={18} /></span>

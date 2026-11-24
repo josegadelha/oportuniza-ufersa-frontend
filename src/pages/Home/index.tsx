@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   ArrowDownWideNarrow,
@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   GraduationCap,
+  LockKeyhole,
   LogOut,
   Search,
   SlidersHorizontal,
@@ -15,7 +16,7 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { departmentLabels, departments, courseLabels } from '../../constants/domainLabels'
 import { useCandidacies } from '../../hooks/useCandidacies'
 import { useNotificationActions } from '../../hooks/useNotificationActions'
@@ -24,6 +25,8 @@ import { useOpportunityProfessors } from '../../hooks/useOpportunityProfessors'
 import { useProposalInterests } from '../../hooks/useProposalInterests'
 import { useProjectProposalAuthors } from '../../hooks/useProjectProposalAuthors'
 import { useProjectProposals } from '../../hooks/useProjectProposals'
+import ProposalInvitePicker from '../../components/ProposalInvitePicker'
+import { canViewStudentProposal } from '../../services/studentProposalVisibility'
 import { ProjectsAndProcessesLink } from '../../UI/Header'
 import CustomSelect from '../../UI/CustomSelect'
 import NotificationMenu from '../../UI/NotificationMenu'
@@ -34,6 +37,8 @@ import type {
   ProjectProposalCard as ProjectProposalCardData,
   ProjectProposalCategory,
   ProjectProposalCreateRequest,
+  ProjectProposalInvite,
+  ProposalInviteDecision,
   ProjectProposalStatus,
   Department,
   UserProfile,
@@ -43,6 +48,18 @@ import type { ServiceResult } from '../../services/result'
 interface HomePageProps {
   user: UserProfile
   onLogout: () => void
+}
+
+function getProposalInviteNavigationState(value: unknown): { proposalId: number } | null {
+  if (typeof value !== 'object' || value === null || !('type' in value) || value.type !== 'proposal-invite') {
+    return null
+  }
+  if (
+    !('proposalId' in value)
+    || typeof value.proposalId !== 'number'
+    || !Number.isSafeInteger(value.proposalId)
+  ) return null
+  return { proposalId: value.proposalId }
 }
 
 const categoryLabels: Record<OpportunityType, string> = {
@@ -301,6 +318,9 @@ function ProjectProposalCardView({
             : styles['category-other']}`}>
             {proposal.category ? proposalCategoryLabels[proposal.category] : 'Proposta de aluno'}
           </span>
+          {proposal.isPrivate && (
+            <span className={styles['private-badge']}><LockKeyhole size={13} /> Privada</span>
+          )}
           <span className={`${styles['open-badge']} ${
             proposal.status === 'CLOSED' ? styles['closed-badge'] : ''
           }`}>
@@ -373,6 +393,8 @@ interface ProjectProposalFormState {
   description: string
   desiredSkills: string
   seeksAdvisor: boolean
+  isPrivate: boolean
+  invites: ProjectProposalInvite[]
 }
 
 const initialProjectProposalForm: ProjectProposalFormState = {
@@ -381,6 +403,8 @@ const initialProjectProposalForm: ProjectProposalFormState = {
   description: '',
   desiredSkills: '',
   seeksAdvisor: true,
+  isPrivate: false,
+  invites: [],
 }
 
 function ProjectProposalCreateDialog({
@@ -419,6 +443,9 @@ function ProjectProposalCreateDialog({
         description: form.description.trim(),
         desiredSkills,
         seeksAdvisor: form.seeksAdvisor,
+        seekingAdvisor: form.seeksAdvisor,
+        isPrivate: form.isPrivate,
+        invites: form.invites,
         status: 'OPEN',
         publishedAt: formatLocalDateTime(new Date()),
       })
@@ -530,6 +557,27 @@ function ProjectProposalCreateDialog({
             <span>Estou buscando um docente orientador</span>
           </label>
 
+          <label className={styles['proposal-advisor-option']}>
+            <input
+              checked={form.isPrivate}
+              className={styles['checkbox-input']}
+              onChange={(event) => updateField('isPrivate', event.target.checked)}
+              type="checkbox"
+            />
+            <span>
+              Tornar proposta privada
+              <small className={styles['privacy-helper']}>
+                Outros alunos não poderão ver esta proposta (exceto convidados). Professores continuarão vendo caso
+                {' '}“Estou buscando um docente orientador” esteja marcado.
+              </small>
+            </span>
+          </label>
+          <ProposalInvitePicker
+            invites={form.invites}
+            onChange={(invites) => updateField('invites', invites)}
+            disabled={isSubmitting}
+          />
+
           {error && <p className={styles['form-error']} role="alert">{error}</p>}
 
           <div className={styles['form-actions']}>
@@ -554,6 +602,8 @@ function ProjectProposalCreateDialog({
 
 function HomePage({ user, onLogout }: HomePageProps) {
   const profile = user.profile
+  const location = useLocation()
+  const navigate = useNavigate()
   const isProfessor = user.role === 'PROFESSOR'
   const [query, setQuery] = useState('')
   const [categories, setCategories] = useState<OpportunityType[]>([])
@@ -568,14 +618,16 @@ function HomePage({ user, onLogout }: HomePageProps) {
     isProfessor ? 'PROPOSALS' : 'OPPORTUNITIES',
   )
   const [selectedOpportunity, setSelectedOpportunity] = useState<OpportunityResponse | null>(null)
-  const [selectedProposal, setSelectedProposal] = useState<ProjectProposalCardData | null>(null)
+  const [selectedProposalOverride, setSelectedProposal] = useState<ProjectProposalCardData | null>(null)
   const [applicationMessage, setApplicationMessage] = useState<string | null>(null)
   const [notificationActionError, setNotificationActionError] = useState<string | null>(null)
   const [isCreateProposalOpen, setIsCreateProposalOpen] = useState(false)
   const [proposalCreateNotice, setProposalCreateNotice] = useState<string | null>(null)
   const [proposalInterestFeedback, setProposalInterestFeedback] = useState<string | null>(null)
+  const [proposalInviteFeedback, setProposalInviteFeedback] = useState<string | null>(null)
+  const [isRespondingToInvite, setIsRespondingToInvite] = useState(false)
   const [submittedProposalInterestIds, setSubmittedProposalInterestIds] = useState<number[]>([])
-  const { createNotification } = useNotificationActions()
+  const { createNotification, markProposalInviteAsRead } = useNotificationActions()
   const {
     opportunities,
     isLoading: opportunitiesLoading,
@@ -605,14 +657,27 @@ function HomePage({ user, onLogout }: HomePageProps) {
     error: proposalsError,
     reload: reloadProposals,
     create: createProjectProposal,
+    respondToInvite: respondToProposalInvite,
   } = useProjectProposals()
+  const visibleProposals = useMemo(
+    () => proposals.filter((proposal) => canViewStudentProposal(proposal, user)),
+    [proposals, user],
+  )
+  const proposalInviteNavigationState = getProposalInviteNavigationState(location.state)
+  const navigationProposal = proposalInviteNavigationState && !proposalsLoading
+    ? visibleProposals.find((proposal) => proposal.id === proposalInviteNavigationState.proposalId) ?? null
+    : null
+  const selectedProposal = selectedProposalOverride ?? navigationProposal
+  const hasPendingProposalInvite = selectedProposal?.invites.some((invite) => (
+    invite.userId === String(profile.id) && invite.status === 'pending'
+  )) ?? false
   const {
     createForProposal: createProposalInterest,
     isSubmitting: isOfferingOrientation,
   } = useProposalInterests()
   const proposalAuthorIds = useMemo(
-    () => proposals.flatMap((proposal) => proposal.authorIds),
-    [proposals],
+    () => visibleProposals.flatMap((proposal) => proposal.authorIds),
+    [visibleProposals],
   )
   const {
     profiles: proposalAuthorProfiles,
@@ -689,7 +754,7 @@ function HomePage({ user, onLogout }: HomePageProps) {
     })
 
   const searchableProposals = useMemo(
-    () => proposals.filter((proposal) => {
+    () => visibleProposals.filter((proposal) => {
       const searchableText = [
         proposal.title,
         proposal.description,
@@ -699,8 +764,32 @@ function HomePage({ user, onLogout }: HomePageProps) {
       ].join(' ')
       return !normalizedQuery || normalizeSearchText(searchableText).includes(normalizedQuery)
     }),
-    [normalizedQuery, proposalAuthorNames, proposals],
+    [normalizedQuery, proposalAuthorNames, visibleProposals],
   )
+  useEffect(() => {
+    if (
+      !proposalInviteNavigationState
+      || proposalsLoading
+      || visibleProposals.some((proposal) => proposal.id === proposalInviteNavigationState.proposalId)
+    ) return
+    navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null })
+  }, [
+    location.hash,
+    location.pathname,
+    location.search,
+    navigate,
+    proposalInviteNavigationState,
+    proposalsLoading,
+    visibleProposals,
+  ])
+  const clearProposalInviteNavigation = () => {
+    if (!proposalInviteNavigationState) return
+    navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null })
+  }
+  const closeProposalDetails = () => {
+    setSelectedProposal(null)
+    clearProposalInviteNavigation()
+  }
   const availabilityProposals = useMemo(
     () => searchableProposals.filter((proposal) => (
       includeClosedProposals || proposal.status !== 'CLOSED'
@@ -790,7 +879,7 @@ function HomePage({ user, onLogout }: HomePageProps) {
     }
   }
   const handleProposalInterest = async () => {
-    if (!selectedProposal) return
+    if (!selectedProposal || !canViewStudentProposal(selectedProposal, user)) return
     setProposalInterestFeedback(null)
     setNotificationActionError(null)
     const result = await createProposalInterest(selectedProposal.id)
@@ -814,6 +903,36 @@ function HomePage({ user, onLogout }: HomePageProps) {
       setProposalInterestFeedback(result.message)
     }
   }
+  const handleProposalInviteResponse = async (decision: ProposalInviteDecision) => {
+    if (
+      !selectedProposal
+      || !selectedProposal.invites.some((invite) => (
+        invite.userId === String(profile.id) && invite.status === 'pending'
+      ))
+    ) return
+
+    setIsRespondingToInvite(true)
+    setNotificationActionError(null)
+    setProposalInviteFeedback(null)
+    const result = await respondToProposalInvite(selectedProposal.id, decision)
+    if (!result.success) {
+      setProposalInviteFeedback(result.message)
+      setIsRespondingToInvite(false)
+      return
+    }
+
+    const notificationResult = await markProposalInviteAsRead(selectedProposal.id)
+    if (!notificationResult.success) setNotificationActionError(notificationResult.message)
+
+    if (decision === 'accepted') {
+      setSelectedProposal(result.data)
+      setProposalInviteFeedback('Convite aceito. Você agora participa desta proposta.')
+    } else {
+      setProposalCreateNotice('Convite recusado.')
+      closeProposalDetails()
+    }
+    setIsRespondingToInvite(false)
+  }
   const handleCreateProjectProposal = async (
     input: ProjectProposalCreateRequest,
   ): Promise<ServiceResult<ProjectProposalCardData>> => {
@@ -825,16 +944,29 @@ function HomePage({ user, onLogout }: HomePageProps) {
       message: `Sua proposta '${result.data.title}' foi publicada com sucesso.`,
       type: 'PITCH_INTEREST',
     })
-    setProposalCreateNotice(notificationResult.success
+    const inviteNotificationResults = await Promise.all(
+      result.data.invites
+        .filter((invite) => invite.status === 'pending')
+        .map((invite) => createNotification({
+          title: 'Convite para proposta',
+          message: `${user.profile.name} convidou você para a proposta '${result.data.title}'`,
+          type: 'PROPOSAL_INVITE',
+          recipientId: Number(invite.userId),
+          projectProposalId: result.data.id,
+        })),
+    )
+    const failedInviteNotification = inviteNotificationResults.find((item) => !item.success)
+    setProposalCreateNotice(notificationResult.success && !failedInviteNotification
       ? 'Proposta publicada com sucesso.'
-      : 'Proposta publicada. Não foi possível atualizar as notificações.')
+      : 'Proposta publicada, mas não foi possível registrar todas as notificações.')
+    if (failedInviteNotification) setNotificationActionError(failedInviteNotification.message)
     return result
   }
   const openProposalCreate = () => {
     setQuery('')
     setActiveTab('PROPOSALS')
     setSelectedOpportunity(null)
-    setSelectedProposal(null)
+    closeProposalDetails()
     setProposalCreateNotice(null)
     setIsCreateProposalOpen(true)
   }
@@ -842,7 +974,7 @@ function HomePage({ user, onLogout }: HomePageProps) {
     if (isProfessor) return
     setActiveTab(tab)
     setSelectedOpportunity(null)
-    setSelectedProposal(null)
+    closeProposalDetails()
     setProposalInterestFeedback(null)
     setNotificationActionError(null)
     setFeedSort('RECENT')
@@ -922,6 +1054,11 @@ function HomePage({ user, onLogout }: HomePageProps) {
         {proposalCreateNotice && (
           <p className={styles['create-success-notice']} role="status">
             <CheckCircle2 size={16} /> {proposalCreateNotice}
+          </p>
+        )}
+        {notificationActionError && !selectedProposal && (
+          <p className={styles['application-error']} role="alert">
+            {notificationActionError}
           </p>
         )}
 
@@ -1297,6 +1434,7 @@ function HomePage({ user, onLogout }: HomePageProps) {
                   key={proposal.id}
                   onOpen={(proposalToOpen) => {
                     setProposalInterestFeedback(null)
+                    setProposalInviteFeedback(null)
                     setNotificationActionError(null)
                     setSelectedProposal(proposalToOpen)
                   }}
@@ -1408,10 +1546,10 @@ function HomePage({ user, onLogout }: HomePageProps) {
           </section>
         </div>
       )}
-      {selectedProposal && (
+      {selectedProposal && canViewStudentProposal(selectedProposal, user) && (
         <div
           className={styles['dialog-backdrop']}
-          onClick={() => setSelectedProposal(null)}
+          onClick={closeProposalDetails}
           role="presentation"
         >
           <section
@@ -1424,7 +1562,7 @@ function HomePage({ user, onLogout }: HomePageProps) {
             <button
               aria-label="Fechar detalhes da proposta"
               className={styles['dialog-close']}
-              onClick={() => setSelectedProposal(null)}
+              onClick={closeProposalDetails}
               type="button"
             >
               <X size={19} />
@@ -1436,6 +1574,9 @@ function HomePage({ user, onLogout }: HomePageProps) {
                 ? proposalCategoryLabels[selectedProposal.category]
                 : 'Proposta de aluno'}
             </span>
+            {selectedProposal.isPrivate && (
+              <span className={styles['private-badge']}><LockKeyhole size={13} /> Privada</span>
+            )}
             <h2 id="proposal-dialog-title">{selectedProposal.title}</h2>
             <p className={styles['dialog-owner']}>
               Proposto por:{' '}
@@ -1464,6 +1605,47 @@ function HomePage({ user, onLogout }: HomePageProps) {
                 </span>
               )}
             </div>
+            {hasPendingProposalInvite && (
+              <div className={styles['proposal-invite-banner']}>
+                <div>
+                  <strong>Você foi convidado para colaborar nesta proposta.</strong>
+                  <span>Revise os detalhes antes de responder ao convite.</span>
+                </div>
+                <div className={styles['proposal-invite-actions']}>
+                  <button
+                    className={styles['proposal-invite-accept']}
+                    disabled={isRespondingToInvite}
+                    onClick={() => void handleProposalInviteResponse('accepted')}
+                    type="button"
+                  >
+                    {isRespondingToInvite ? 'Atualizando...' : 'Aceitar convite'}
+                  </button>
+                  <button
+                    className={styles['proposal-invite-decline']}
+                    disabled={isRespondingToInvite}
+                    onClick={() => void handleProposalInviteResponse('declined')}
+                    type="button"
+                  >
+                    Recusar
+                  </button>
+                </div>
+                {proposalInviteFeedback && (
+                  <p className={styles['invite-response-feedback']} role="alert">
+                    {proposalInviteFeedback}
+                  </p>
+                )}
+              </div>
+            )}
+            {proposalInviteFeedback && !hasPendingProposalInvite && (
+              <p className={styles['invite-response-feedback']} role="status">
+                {proposalInviteFeedback}
+              </p>
+            )}
+            {notificationActionError && (
+              <p aria-live="polite" className={styles['application-error']}>
+                {notificationActionError}
+              </p>
+            )}
             <div className={styles['requirements']}>
               <h3>Competências buscadas</h3>
               {selectedProposal.desiredSkills.length > 0 ? (
@@ -1474,7 +1656,7 @@ function HomePage({ user, onLogout }: HomePageProps) {
                 <p className={styles['proposal-no-skills']}>Nenhuma competência específica informada.</p>
               )}
             </div>
-            {!(user.role === 'STUDENT'
+            {!hasPendingProposalInvite && !(user.role === 'STUDENT'
               && selectedProposal.authorIds.includes(profile.id)) && (
               <div className={styles['application-actions']}>
                 <button

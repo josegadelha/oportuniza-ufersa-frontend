@@ -6,6 +6,7 @@ import type {
   UserProfile,
   UserProfileDetails,
   UserProfilesByRole,
+  ProjectProposalInviteCandidate,
   UserRole,
 } from '../../types/domain'
 import type { UserService } from '../userService'
@@ -121,6 +122,18 @@ function normalizeItems(items: string[]) {
 
 export const mockUserService: UserService = {
   supportsExtendedProfileFields: true,
+
+  async listInviteCandidates(): Promise<ProjectProposalInviteCandidate[]> {
+    await simulateNetworkDelay()
+    return structuredClone([
+      ...Object.values(users),
+      ...initialMockAdditionalProfiles,
+    ].map(({ role, profile }) => ({
+      userId: String(profile.id),
+      name: profile.name,
+      role: role === 'STUDENT' ? 'student' : 'professor',
+    })))
+  },
 
   async getCurrentProfile(role: UserRole) {
     await simulateNetworkDelay()
