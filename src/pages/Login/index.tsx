@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import type { SubmitEvent } from 'react'
 import {
   Eye,
   EyeOff,
@@ -32,7 +33,7 @@ function LoginPage({ onLogin, isLoading, error, clearError }: LoginPageProps) {
     }
   }, [])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     void onLogin({ username: username.trim(), password })
   }

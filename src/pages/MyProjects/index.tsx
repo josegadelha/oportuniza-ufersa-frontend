@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import type { SubmitEvent } from 'react'
 import { BriefcaseBusiness, Check, Clock3, Eye, FileText, FolderKanban, GraduationCap, LockKeyhole, LogOut, Mail, Plus, RefreshCw, Upload, UsersRound, X } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
@@ -254,7 +255,7 @@ function MyProjectsPage() {
     setNotificationMessage('')
   }
 
-  async function submitCandidacyNotification(event: FormEvent<HTMLFormElement>) {
+  async function submitCandidacyNotification(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!notificationTarget) return
     setIsWorking(true)
@@ -1078,7 +1079,7 @@ function OpportunityCreateDialog({
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)
@@ -1259,7 +1260,7 @@ function DeliverableUploadDialog({
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!file) {
       setError('Selecione um arquivo PDF para continuar.')
@@ -1493,7 +1494,7 @@ function EditOpportunityDialog({
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)
@@ -1696,7 +1697,7 @@ function CandidacyNotificationDialog({
   onTitleChange: (title: string) => void
   onMessageChange: (message: string) => void
   onClose: () => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void
 }) {
   return (
     <div className={styles.dialogBackdrop} onClick={(event) => {
@@ -1770,7 +1771,7 @@ function CreateDeliverableDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [minimumDate] = useState(() => new Date().toISOString().slice(0, 10))
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)

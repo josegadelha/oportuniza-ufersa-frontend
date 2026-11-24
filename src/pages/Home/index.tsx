@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 import {
   ArrowDownWideNarrow,
   ArrowRight,
@@ -425,7 +425,7 @@ function ProjectProposalCreateDialog({
     setForm((current) => ({ ...current, [key]: value }))
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)

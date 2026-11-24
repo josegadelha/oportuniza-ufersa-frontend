@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
+import type { SubmitEvent } from 'react'
 import {
   ArrowLeft,
   BookOpen,
@@ -177,7 +178,7 @@ function ProfileView({ profileId }: { profileId?: string }) {
     setIsEditing((current) => !current)
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!profile || !form) return
 
